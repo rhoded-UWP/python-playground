@@ -2,6 +2,8 @@
 
 Classroom site for Python learning — interactive playground, problem sets, attendance activities, and contest pages (APRC, AWPC).
 
+https://python-playground-vbr2.onrender.com/index.html
+
 ## Stack
 - **Frontend:** static HTML / CSS / vanilla JS (in `/public`)
 - **Backend:** Node.js + Express (`server.js`)
