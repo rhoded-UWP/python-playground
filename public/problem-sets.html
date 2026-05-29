@@ -5,6 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content="Curated Python problem sets organized by topic and difficulty." />
   <title>Problem Sets | Python Playground</title>
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('pp-theme');
+        var theme = stored || 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
   <link rel="stylesheet" href="/css/styles.css" />
 </head>
 <body data-page="problems">
@@ -14,6 +23,9 @@
         <span class="site-brand__mark">{ }</span>
         <span class="site-brand__name">Python Playground</span>
       </a>
+      <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to dark mode">
+        <span class="theme-toggle__icon" aria-hidden="true">☀️</span>
+      </button>
       <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Toggle navigation">
         <span></span><span></span><span></span>
       </button>

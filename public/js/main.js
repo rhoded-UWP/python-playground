@@ -2,6 +2,7 @@
    Python Playground — Front-end behaviors
    - Highlights the active nav tab based on <body data-page="...">
    - Toggles the mobile nav menu
+   - Theme toggle with localStorage persistence
    - Stamps the current year into the footer
    ========================================================= */
 
@@ -11,6 +12,7 @@
   document.addEventListener('DOMContentLoaded', function () {
     highlightActiveTab();
     wireMobileNavToggle();
+    initThemeToggle();
     stampFooterYear();
   });
 
@@ -41,5 +43,34 @@
   function stampFooterYear() {
     var el = document.getElementById('footer-year');
     if (el) el.textContent = String(new Date().getFullYear());
+  }
+
+  function initThemeToggle() {
+    var STORAGE_KEY = 'pp-theme';
+    var toggle = document.querySelector('.theme-toggle');
+    if (!toggle) return;
+    var icon = toggle.querySelector('.theme-toggle__icon');
+
+    syncToggleUI(document.documentElement.getAttribute('data-theme') || 'light');
+
+    toggle.addEventListener('click', function () {
+      var current = document.documentElement.getAttribute('data-theme') || 'light';
+      var next = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem(STORAGE_KEY, next); } catch (e) {}
+      syncToggleUI(next);
+    });
+
+    function syncToggleUI(theme) {
+      if (theme === 'dark') {
+        if (icon) icon.textContent = '🌛';
+        toggle.setAttribute('aria-label', 'Switch to light mode');
+        toggle.setAttribute('aria-pressed', 'true');
+      } else {
+        if (icon) icon.textContent = '☀️';
+        toggle.setAttribute('aria-label', 'Switch to dark mode');
+        toggle.setAttribute('aria-pressed', 'false');
+      }
+    }
   }
 })();
