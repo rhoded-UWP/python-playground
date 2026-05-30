@@ -37,7 +37,7 @@
   --font-mono: "Cascadia Code", "Cascadia Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
 
   /* Sizing */
-  --container-max: 1200px;
+  --container-max: 1600px;  /* widescreen-friendly; fills 16:9 displays */
   --header-h: 64px;
   --radius-sm: 6px;
   --radius-md: 10px;
@@ -285,6 +285,10 @@ button { font: inherit; cursor: pointer; }
 .page__body {
   display: grid;
   gap: 1.25rem;
+  /* Flow content into as many columns as fit on wide (16:9) screens;
+     collapses to a single column on narrow viewports. */
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  align-items: start;
 }
 
 .content-block {
