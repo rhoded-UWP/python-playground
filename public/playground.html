@@ -15,6 +15,35 @@
     })();
   </script>
   <link rel="stylesheet" href="/css/styles.css" />
+
+  <!--
+    Import map for CodeMirror 6 (loaded from the esm.sh CDN).
+    CodeMirror 6 is split across many small packages. The "?external=..."
+    query tells esm.sh to leave the shared CodeMirror/Lezer packages as
+    bare imports so they all resolve to the SAME copy through this map.
+    That single-copy guarantee is what keeps Python highlighting working
+    (CodeMirror compares values across packages by identity).
+    To upgrade, bump the version numbers below.
+  -->
+  <script type="importmap">
+  {
+    "imports": {
+      "@codemirror/state":          "https://esm.sh/@codemirror/state@6?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/commands,@codemirror/autocomplete,@codemirror/lint,@codemirror/search,@lezer/common,@lezer/highlight,@lezer/lr,@lezer/python",
+      "@codemirror/view":           "https://esm.sh/@codemirror/view@6?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/commands,@codemirror/autocomplete,@codemirror/lint,@codemirror/search,@lezer/common,@lezer/highlight,@lezer/lr,@lezer/python",
+      "@codemirror/language":       "https://esm.sh/@codemirror/language@6?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/commands,@codemirror/autocomplete,@codemirror/lint,@codemirror/search,@lezer/common,@lezer/highlight,@lezer/lr,@lezer/python",
+      "@codemirror/commands":       "https://esm.sh/@codemirror/commands@6?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/commands,@codemirror/autocomplete,@codemirror/lint,@codemirror/search,@lezer/common,@lezer/highlight,@lezer/lr,@lezer/python",
+      "@codemirror/autocomplete":   "https://esm.sh/@codemirror/autocomplete@6?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/commands,@codemirror/autocomplete,@codemirror/lint,@codemirror/search,@lezer/common,@lezer/highlight,@lezer/lr,@lezer/python",
+      "@codemirror/lint":           "https://esm.sh/@codemirror/lint@6?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/commands,@codemirror/autocomplete,@codemirror/lint,@codemirror/search,@lezer/common,@lezer/highlight,@lezer/lr,@lezer/python",
+      "@codemirror/search":         "https://esm.sh/@codemirror/search@6?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/commands,@codemirror/autocomplete,@codemirror/lint,@codemirror/search,@lezer/common,@lezer/highlight,@lezer/lr,@lezer/python",
+      "@codemirror/lang-python":    "https://esm.sh/@codemirror/lang-python@6?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/commands,@codemirror/autocomplete,@codemirror/lint,@codemirror/search,@lezer/common,@lezer/highlight,@lezer/lr,@lezer/python",
+      "@codemirror/theme-one-dark": "https://esm.sh/@codemirror/theme-one-dark@6?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/commands,@codemirror/autocomplete,@codemirror/lint,@codemirror/search,@lezer/common,@lezer/highlight,@lezer/lr,@lezer/python",
+      "@lezer/common":              "https://esm.sh/@lezer/common@1?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/commands,@codemirror/autocomplete,@codemirror/lint,@codemirror/search,@lezer/common,@lezer/highlight,@lezer/lr,@lezer/python",
+      "@lezer/lr":                  "https://esm.sh/@lezer/lr@1?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/commands,@codemirror/autocomplete,@codemirror/lint,@codemirror/search,@lezer/common,@lezer/highlight,@lezer/lr,@lezer/python",
+      "@lezer/highlight":           "https://esm.sh/@lezer/highlight@1?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/commands,@codemirror/autocomplete,@codemirror/lint,@codemirror/search,@lezer/common,@lezer/highlight,@lezer/lr,@lezer/python",
+      "@lezer/python":              "https://esm.sh/@lezer/python@1?external=@codemirror/state,@codemirror/view,@codemirror/language,@codemirror/commands,@codemirror/autocomplete,@codemirror/lint,@codemirror/search,@lezer/common,@lezer/highlight,@lezer/lr,@lezer/python"
+    }
+  }
+  </script>
 </head>
 <body data-page="playground">
   <header class="site-header">
@@ -50,9 +79,53 @@
     </section>
 
     <section class="page__body" aria-label="Content">
-      <article class="content-block">
-        <!-- Page content goes here -->
-      </article>
+      <!--
+        Interactive Python environment. Three panes, all client side:
+          - Instructions (side pane, static text for now)
+          - Code editor  (CodeMirror 6, mounted into #pyenv-editor)
+          - Output       (Pyodide stdout / stderr, #pyenv-output)
+        Behavior lives in /js/playground.js. The data-exercise-id is a
+        hook for a future auto-check layer; nothing reads it yet.
+      -->
+      <div class="pyenv" data-exercise-id="intro-1">
+
+        <!-- Instructions pane (side). Static content only for this build. -->
+        <aside class="pyenv__instructions" aria-label="Instructions">
+          <h2 class="pyenv__heading">Instructions</h2>
+          <div class="pyenv__prose">
+            <p>Welcome to the Python Playground. Write Python in the editor, then press Run to see what it does in the Output panel below.</p>
+            <ol>
+              <li>Read the starter code in the editor.</li>
+              <li>Press Run and watch the Output panel.</li>
+              <li>Change <code>name</code> to your own name, then run it again.</li>
+              <li>Add another <code>print(...)</code> line and see what happens.</li>
+            </ol>
+            <p class="pyenv__note">Your code runs entirely in your browser. Nothing is sent to a server.</p>
+          </div>
+          <!-- FUTURE (auto-check): pass/fail feedback renders here.
+               Hidden until a checker fills it in. -->
+          <div class="pyenv__check" hidden aria-live="polite"></div>
+        </aside>
+
+        <!-- Primary column: toolbar, editor, then output stacked. -->
+        <div class="pyenv__main">
+          <div class="pyenv__toolbar">
+            <!-- Disabled until Pyodide finishes loading (see playground.js). -->
+            <button type="button" class="pyenv__run" id="pyenv-run" disabled>Loading Python...</button>
+            <span class="pyenv__status" id="pyenv-status" role="status" aria-live="polite"></span>
+          </div>
+
+          <!-- CodeMirror mounts here. -->
+          <div class="pyenv__editor" id="pyenv-editor" aria-label="Python code editor"></div>
+
+          <!-- Program output / errors. Cleared at the start of each run. -->
+          <section class="pyenv__output-wrap" aria-label="Program output">
+            <div class="pyenv__output-bar">Output</div>
+            <pre class="pyenv__output" id="pyenv-output" tabindex="0" aria-live="polite"></pre>
+          </section>
+        </div>
+
+      </div>
     </section>
   </main>
 
@@ -63,5 +136,8 @@
   </footer>
 
   <script src="/js/main.js" defer></script>
+  <!-- Playground-only behavior. ES modules defer by default, matching
+       the deferred load of the shared main.js above. -->
+  <script type="module" src="/js/playground.js"></script>
 </body>
 </html>

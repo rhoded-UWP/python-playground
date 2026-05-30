@@ -300,6 +300,159 @@ button { font: inherit; cursor: pointer; }
   min-height: 200px;
 }
 
+/* 7b. Interactive Python environment (playground) ---------- */
+/* All colors come from the theme tokens above so the panes follow
+   both light and dark mode automatically. No new palette is defined. */
+
+.pyenv {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: 1fr; /* stacked by default (narrow / iframe) */
+  align-items: start;
+}
+
+/* Desktop: instructions sit beside the editor column.
+   minmax(0, 1fr) lets the editor column shrink inside a constrained
+   Canvas iframe instead of forcing the page wider. */
+@media (min-width: 880px) {
+  .pyenv {
+    grid-template-columns: minmax(240px, 22rem) minmax(0, 1fr);
+  }
+}
+
+/* Instructions pane: matches the site's card aesthetic. */
+.pyenv__instructions {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: clamp(1.25rem, 3vw, 1.75rem);
+  box-shadow: var(--shadow-sm);
+}
+
+.pyenv__heading {
+  font-size: 1.1rem;
+  margin: 0 0 0.75rem;
+}
+
+.pyenv__prose {
+  color: var(--color-ink);
+  font-size: 0.95rem;
+}
+.pyenv__prose p { margin: 0 0 0.75rem; }
+.pyenv__prose ol { margin: 0 0 0.75rem; padding-left: 1.25rem; }
+.pyenv__prose li { margin-bottom: 0.35rem; }
+.pyenv__prose code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+  padding: 0.1em 0.35em;
+  border-radius: var(--radius-sm);
+}
+.pyenv__note {
+  color: var(--color-ink-muted);
+  font-size: 0.85rem;
+}
+
+/* Primary column: toolbar, editor, then output stacked vertically. */
+.pyenv__main {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0; /* allow the editor to shrink within the grid track */
+}
+
+.pyenv__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+/* Run button. Text uses --color-surface as an "on-accent" color: the
+   surface always contrasts with the accent in both themes (white text
+   on dark-blue in light mode, dark text on light-blue in dark mode). */
+.pyenv__run {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--color-surface);
+  background: var(--color-accent);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 1.25rem;
+  transition: filter 150ms var(--ease), opacity 150ms var(--ease);
+}
+.pyenv__run:hover:not(:disabled) { filter: brightness(1.08); }
+.pyenv__run:disabled { opacity: 0.55; cursor: default; }
+.pyenv__run:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.pyenv__status {
+  color: var(--color-ink-muted);
+  font-size: 0.9rem;
+}
+
+/* Editor pane. CodeMirror mounts inside and fills this box; it scrolls
+   internally rather than growing the page. Height clamps so it stays
+   usable inside a short iframe. */
+.pyenv__editor {
+  height: clamp(260px, 45vh, 520px);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+.pyenv__editor .cm-editor { height: 100%; }
+.pyenv__editor .cm-editor.cm-focused { outline: none; }
+
+/* Output pane. */
+.pyenv__output-wrap {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.pyenv__output-bar {
+  background: var(--color-tab-bg);
+  color: var(--color-ink-muted);
+  font: 600 0.78rem/1 var(--font-sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 0.5rem 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.pyenv__output {
+  margin: 0;
+  padding: 0.85rem;
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--color-ink);
+  background: var(--color-surface);
+  white-space: pre-wrap;
+  word-break: break-word;
+  min-height: 96px;
+  max-height: 320px;
+  overflow: auto;
+}
+/* Hint shown before the first run (and whenever output is empty). */
+.pyenv__output:empty::before {
+  content: "Output will appear here after you press Run.";
+  color: var(--color-ink-muted);
+}
+
+/* Error block. Flagged with the theme accent rather than a hardcoded
+   red, so it themes correctly and adds no new palette. */
+.pyenv__output-line--error {
+  display: block;
+  margin-top: 0.5rem;
+  padding: 0.5rem 0.65rem;
+  background: var(--color-accent-soft);
+  border-left: 3px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+}
+
 /* 8. Site footer ------------------------------------------- */
 .site-footer {
   margin-top: auto;
