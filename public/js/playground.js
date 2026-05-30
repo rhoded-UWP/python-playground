@@ -1,6 +1,6 @@
 /* =========================================================
    Python Playground — Interactive environment
-   (loaded on playground.html only)
+   (loaded on programming-playground.html only)
 
    Three panes, all client side:
      1. Instructions (static text for now)
@@ -9,7 +9,7 @@
 
    This file loads as an ES module, so it defers by default, matching
    the way the shared /js/main.js is added with `defer`. CodeMirror 6
-   is resolved from a CDN through the import map in playground.html;
+   is resolved from a CDN through the import map in programming-playground.html;
    Pyodide is injected from its CDN on demand.
 
    The code is organized so later features can be added without

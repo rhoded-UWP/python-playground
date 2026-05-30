@@ -29,12 +29,12 @@ Then open <http://localhost:3000>.
 │   ├── css/styles.css
 │   ├── js/main.js
 │   ├── index.html       # Home
-│   ├── playground.html
+│   ├── programming-playground.html
 │   ├── problem-sets.html
 │   ├── attendance.html
 │   ├── aprc.html
 │   ├── awpc.html
-│   ├── extra1.html
+│   ├── python-arcade.html
 │   └── about.html
 ├── server.js            # Express entry point
 ├── package.json
