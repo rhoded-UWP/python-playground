@@ -241,6 +241,17 @@ async function runCode(editor) {
 
   try {
     const pyodide = await ensurePyodide();
+    const source = getCode(editor);
+
+    // Guardrail: activities never need imports, so reject any import
+    // statement before running. The check parses with Python's ast, so the
+    // word "import" inside a string — e.g. print("this is important") — or an
+    // identifier is not an Import node and runs normally.
+    if (hasImportStatement(pyodide, source)) {
+      showError("No imports are allowed in the Python Programming Playground.");
+      result.ok = false;
+      return result;
+    }
 
     // Route both streams into the output pane. We use `write` (raw bytes)
     // rather than `batched` because `batched` strips the trailing newline
@@ -250,7 +261,11 @@ async function runCode(editor) {
     pyodide.setStdout({ write: writeOutputBytes });
     pyodide.setStderr({ write: writeOutputBytes });
 
-    await pyodide.runPythonAsync(getCode(editor));
+    // Wire up stdin so input() works. The browser has no terminal, so we
+    // collect each line through a prompt dialog. See readStdinLine.
+    pyodide.setStdin({ stdin: readStdinLine });
+
+    await pyodide.runPythonAsync(source);
   } catch (err) {
     // Pyodide raises a PythonError whose message holds the traceback.
     result.ok = false;
@@ -271,10 +286,66 @@ async function runCode(editor) {
   return result;
 }
 
+// True if the source contains a real import. We parse with Python's own ast
+// in a throwaway namespace, which gives two things: (a) "import" inside a
+// string or a word like "important" is not an import node, so it is ignored;
+// and (b) the check runs isolated from the student's globals, so
+// previously-run code can't tamper with it. A syntax error counts as "no
+// import" so the normal run path reports the SyntaxError as usual.
+//
+// Flagged: `import ...` / `from ... import ...` statements, plus any
+// reference to the __import__ builtin (e.g. __import__("os") or
+// builtins.__import__), which would otherwise load a module without an
+// import statement.
+function hasImportStatement(pyodide, source) {
+  const ns = pyodide.toPy({ _src: source });
+  try {
+    return pyodide.runPython(
+      `
+import ast
+
+def _pp_is_import(n):
+    if isinstance(n, (ast.Import, ast.ImportFrom)):
+        return True
+    if isinstance(n, ast.Name) and n.id == "__import__":
+        return True
+    if isinstance(n, ast.Attribute) and n.attr == "__import__":
+        return True
+    return False
+
+try:
+    _flag = any(_pp_is_import(n) for n in ast.walk(ast.parse(_src)))
+except SyntaxError:
+    _flag = False
+_flag
+`,
+      { globals: ns }
+    );
+  } finally {
+    ns.destroy();
+  }
+}
+
 /* ---- Output helpers ------------------------------------ */
 
 function clearOutput() {
   outputEl.textContent = "";
+  pendingPromptLine = "";
+}
+
+// Provide stdin for input(). Python's input(prompt) first writes `prompt`
+// to stdout, which we've captured as the current un-terminated output line
+// (pendingPromptLine); we reuse it as the dialog label so the student sees
+// the same question in the popup. Returning the line plus "\n" terminates
+// one read; returning null signals EOF (e.g. the student presses Cancel),
+// which surfaces in Python as EOFError.
+const MAX_STDIN_LINE = 2048; // cap one input() line so a huge paste can't bog down the tab
+function readStdinLine() {
+  const reply = window.prompt(pendingPromptLine || "Program input:");
+  if (reply === null) return null;
+  const line = reply.slice(0, MAX_STDIN_LINE);
+  appendOutput(line + "\n"); // echo the answer into the visible transcript
+  return line + "\n";
 }
 
 // Decode raw stdout/stderr bytes from Pyodide and append them verbatim,
@@ -287,10 +358,20 @@ function writeOutputBytes(buffer) {
   return buffer.length;
 }
 
+// The current output line that has not yet ended in a newline. input()
+// writes its prompt here (no trailing newline), so readStdinLine can reuse
+// it as the prompt dialog's label.
+let pendingPromptLine = "";
+
 // Append plain program output and keep the latest line in view.
 function appendOutput(text) {
   outputEl.appendChild(document.createTextNode(text));
   outputEl.scrollTop = outputEl.scrollHeight;
+
+  // Track the text after the last newline as the pending (unterminated) line.
+  const lastNewline = text.lastIndexOf("\n");
+  pendingPromptLine =
+    lastNewline === -1 ? pendingPromptLine + text : text.slice(lastNewline + 1);
 }
 
 // Render an error block. It is flagged with the theme accent (not a new
