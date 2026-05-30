@@ -242,10 +242,13 @@ async function runCode(editor) {
   try {
     const pyodide = await ensurePyodide();
 
-    // Standard Pyodide stdout/stderr redirect: route both streams into
-    // the output pane. `batched` hands us text chunks as they flush.
-    pyodide.setStdout({ batched: appendOutput });
-    pyodide.setStderr({ batched: appendOutput });
+    // Route both streams into the output pane. We use `write` (raw bytes)
+    // rather than `batched` because `batched` strips the trailing newline
+    // from each chunk, which would collapse separate print() lines onto one
+    // line. Decoding the bytes ourselves preserves newlines exactly (and
+    // handles print(..., end="") correctly too).
+    pyodide.setStdout({ write: writeOutputBytes });
+    pyodide.setStderr({ write: writeOutputBytes });
 
     await pyodide.runPythonAsync(getCode(editor));
   } catch (err) {
@@ -274,8 +277,17 @@ function clearOutput() {
   outputEl.textContent = "";
 }
 
-// Append plain program output. Chunks already include their newlines,
-// so we append them as-is and keep the latest line in view.
+// Decode raw stdout/stderr bytes from Pyodide and append them verbatim,
+// preserving newlines. Pyodide's `write` callback must return the number
+// of bytes consumed. A streaming TextDecoder keeps multi-byte characters
+// intact if they ever straddle a chunk boundary.
+const outputDecoder = new TextDecoder();
+function writeOutputBytes(buffer) {
+  appendOutput(outputDecoder.decode(buffer, { stream: true }));
+  return buffer.length;
+}
+
+// Append plain program output and keep the latest line in view.
 function appendOutput(text) {
   outputEl.appendChild(document.createTextNode(text));
   outputEl.scrollTop = outputEl.scrollHeight;
