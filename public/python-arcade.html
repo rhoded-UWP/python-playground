@@ -47,12 +47,81 @@
   <main id="main" class="page">
     <section class="page__hero" aria-labelledby="page-title">
       <h1 id="page-title">Python Arcade</h1>
+      <p class="page__hero-lead">Learn Python by playing. Pick a game below &mdash; each one opens in a new tab.</p>
     </section>
 
-    <section class="page__body" aria-label="Content">
-      <article class="content-block">
-        <!-- Page content goes here -->
-      </article>
+    <section class="home-explore" aria-labelledby="games-heading">
+      <h2 id="games-heading" class="home-explore__heading">Games</h2>
+
+      <!--
+        To add a new game, copy one <li> block below and update:
+          - the link href
+          - the .game-card__thumb-label and .game-card__title text
+          - the <img src> (drop a screenshot in /img/arcade/, see README there)
+          - bump the style="--i:N" so the load animation staggers in order
+        The grid auto-flows, so there's no layout to adjust as you grow it.
+      -->
+      <ul class="card-grid">
+        <li class="card-grid__item" style="--i:0">
+          <a class="game-card" href="https://rhoded-uwp.github.io/DataTypesCatcher/" target="_blank" rel="noopener noreferrer">
+            <span class="game-card__thumb">
+              <span class="game-card__thumb-label" aria-hidden="true">Data Type Catcher</span>
+              <img src="/img/arcade/data-type-catcher.png" alt="" loading="lazy" onerror="this.remove()" />
+            </span>
+            <span class="game-card__body">
+              <span class="game-card__title">Data Type Catcher</span>
+              <!-- <span class="game-card__desc">Description goes here.</span> -->
+              <span class="game-card__go" aria-hidden="true">Play &rarr;</span>
+              <span class="visually-hidden">(opens in a new tab)</span>
+            </span>
+          </a>
+        </li>
+
+        <li class="card-grid__item" style="--i:1">
+          <a class="game-card" href="https://rhoded-uwp.github.io/PEP8CodeOrder/" target="_blank" rel="noopener noreferrer">
+            <span class="game-card__thumb">
+              <span class="game-card__thumb-label" aria-hidden="true">Python Program Order Challenge</span>
+              <img src="/img/arcade/python-program-order.png" alt="" loading="lazy" onerror="this.remove()" />
+            </span>
+            <span class="game-card__body">
+              <span class="game-card__title">Python Program Order Challenge</span>
+              <!-- <span class="game-card__desc">Description goes here.</span> -->
+              <span class="game-card__go" aria-hidden="true">Play &rarr;</span>
+              <span class="visually-hidden">(opens in a new tab)</span>
+            </span>
+          </a>
+        </li>
+
+        <li class="card-grid__item" style="--i:2">
+          <a class="game-card" href="https://rhoded-uwp.github.io/CookieClicker_Demo/" target="_blank" rel="noopener noreferrer">
+            <span class="game-card__thumb">
+              <span class="game-card__thumb-label" aria-hidden="true">Cookie Clicker Demo</span>
+              <img src="/img/arcade/cookie-clicker-demo.png" alt="" loading="lazy" onerror="this.remove()" />
+            </span>
+            <span class="game-card__body">
+              <span class="game-card__title">Cookie Clicker Demo</span>
+              <!-- <span class="game-card__desc">Description goes here.</span> -->
+              <span class="game-card__go" aria-hidden="true">Play &rarr;</span>
+              <span class="visually-hidden">(opens in a new tab)</span>
+            </span>
+          </a>
+        </li>
+
+        <li class="card-grid__item" style="--i:3">
+          <a class="game-card" href="https://rhoded-uwp.github.io/Tuple_and_List_Munchers/" target="_blank" rel="noopener noreferrer">
+            <span class="game-card__thumb">
+              <span class="game-card__thumb-label" aria-hidden="true">Tuple and List Munchers</span>
+              <img src="/img/arcade/tuple-and-list-munchers.png" alt="" loading="lazy" onerror="this.remove()" />
+            </span>
+            <span class="game-card__body">
+              <span class="game-card__title">Tuple and List Munchers</span>
+              <!-- <span class="game-card__desc">Description goes here.</span> -->
+              <span class="game-card__go" aria-hidden="true">Play &rarr;</span>
+              <span class="visually-hidden">(opens in a new tab)</span>
+            </span>
+          </a>
+        </li>
+      </ul>
     </section>
   </main>
 

@@ -4,6 +4,7 @@
    - Toggles the mobile nav menu
    - Theme toggle with localStorage persistence
    - Stamps the current year into the footer
+   - Types out the home-page hero title (home page only)
    ========================================================= */
 
 (function () {
@@ -14,6 +15,7 @@
     wireMobileNavToggle();
     initThemeToggle();
     stampFooterYear();
+    initHeroTyping();
   });
 
   function highlightActiveTab() {
@@ -43,6 +45,31 @@
   function stampFooterYear() {
     var el = document.getElementById('footer-year');
     if (el) el.textContent = String(new Date().getFullYear());
+  }
+
+  function initHeroTyping() {
+    var typed = document.querySelector('.home-hero__typed');
+    if (!typed) return; // only present on the home page
+
+    var full = typed.getAttribute('data-text') || typed.textContent;
+    var reduce = window.matchMedia &&
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    // Reduced motion (or no matchMedia): leave the full title in place.
+    if (reduce) {
+      typed.textContent = full;
+      return;
+    }
+
+    typed.textContent = '';
+    var i = 0;
+    (function tick() {
+      typed.textContent = full.slice(0, i);
+      if (i < full.length) {
+        i += 1;
+        setTimeout(tick, 75);
+      }
+    })();
   }
 
   function initThemeToggle() {
