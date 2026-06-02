@@ -80,34 +80,21 @@
 
     <section class="page__body" aria-label="Content">
       <!--
-        Interactive Python environment. Three panes, all client side:
-          - Instructions (side pane, static text for now)
-          - Code editor  (CodeMirror 6, mounted into #pyenv-editor)
-          - Output       (Pyodide stdout / stderr, #pyenv-output)
-        Behavior lives in /js/playground.js. The data-exercise-id is a
-        hook for a future auto-check layer; nothing reads it yet.
+        Interactive Python environment, VS Code-style three-column layout,
+        all client side:
+          - Assignment rail (left, #pyenv-rail)   — picker, built by JS
+          - Coding window   (center, .pyenv__main) — toolbar + editor + output
+          - Assignment panel (right, #pyenv-panel) — instructions + tests, built by JS
+        Behavior lives in /js/playground.js. The rail and panel are
+        populated from the ASSIGNMENTS data model there, so the markup
+        below is intentionally just the empty containers.
       -->
       <div class="pyenv" data-exercise-id="intro-1">
 
-        <!-- Instructions pane (side). Static content only for this build. -->
-        <aside class="pyenv__instructions" aria-label="Instructions">
-          <h2 class="pyenv__heading">Instructions</h2>
-          <div class="pyenv__prose">
-            <p>Welcome to the Python Playground. Write Python in the editor, then press Run to see what it does in the Output panel below.</p>
-            <ol>
-              <li>Read the starter code in the editor.</li>
-              <li>Press Run and watch the Output panel.</li>
-              <li>Change <code>name</code> to your own name, then run it again.</li>
-              <li>Add another <code>print(...)</code> line and see what happens.</li>
-            </ol>
-            <p class="pyenv__note">Your code runs entirely in your browser. Nothing is sent to a server.</p>
-          </div>
-          <!-- FUTURE (auto-check): pass/fail feedback renders here.
-               Hidden until a checker fills it in. -->
-          <div class="pyenv__check" hidden aria-live="polite"></div>
-        </aside>
+        <!-- Left rail: assignment picker (rendered by playground.js). -->
+        <nav class="pyenv__rail" id="pyenv-rail" aria-label="Assignments"></nav>
 
-        <!-- Primary column: toolbar, editor, then output stacked. -->
+        <!-- Center column: toolbar, editor, then output stacked. -->
         <div class="pyenv__main">
           <div class="pyenv__toolbar">
             <!-- Disabled until Pyodide finishes loading (see playground.js). -->
@@ -124,6 +111,9 @@
             <pre class="pyenv__output" id="pyenv-output" tabindex="0" aria-live="polite"></pre>
           </section>
         </div>
+
+        <!-- Right panel: assignment instructions + tester (rendered by playground.js). -->
+        <aside class="pyenv__panel" id="pyenv-panel" aria-label="Assignment and tests"></aside>
 
       </div>
     </section>

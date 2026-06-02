@@ -1,0 +1,28 @@
+{
+  "id": "hello",
+  "name": "Hello, World",
+  "blurb": "Your first program",
+  "starter": [
+    "# Assignment: print exactly  Hello, World!",
+    "# Write your code below, then click Test Code.",
+    ""
+  ],
+  "instructions": [
+    "<p>The classic first program. Make your code print this line <em>exactly</em>:</p>",
+    "<pre><code>Hello, World!</code></pre>",
+    "<p>Mind the capital letters, the comma, the space, and the exclamation mark — the test checks for an exact match.</p>"
+  ],
+  "tests": [
+    {
+      "name": "Uses a print() statement",
+      "type": "source",
+      "pattern": "\\bprint\\s*\\("
+    },
+    {
+      "name": "Prints exactly: Hello, World!",
+      "type": "output",
+      "input": [],
+      "expected": ["Hello, World!"]
+    }
+  ]
+}

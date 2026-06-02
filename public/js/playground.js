@@ -2,26 +2,28 @@
    Python Playground — Interactive environment
    (loaded on programming-playground.html only)
 
-   Three panes, all client side:
-     1. Instructions (static text for now)
-     2. Code editor  (CodeMirror 6)
-     3. Output       (Pyodide stdout / stderr)
+   VS Code-style three-column layout, all client side:
+     1. Assignment rail (left)  — pick between assignments
+     2. Code editor     (center)— CodeMirror 6 + output (the coding window)
+     3. Assignment panel(right) — instructions + a "Test Code" tester
 
-   This file loads as an ES module, so it defers by default, matching
-   the way the shared /js/main.js is added with `defer`. CodeMirror 6
-   is resolved from a CDN through the import map in programming-playground.html;
-   Pyodide is injected from its CDN on demand.
+   Assignments are NOT hardcoded here: they are authored as JSON files in
+   /public/assignments and fetched at load time from GET /api/assignments
+   (see server.js and that folder's README.md). Adding an assignment is just
+   dropping a new JSON file in that folder.
+
+   This file loads as an ES module, so it defers by default, matching the way
+   the shared /js/main.js is added with `defer`. CodeMirror 6 is resolved from
+   a CDN through the import map in programming-playground.html; Pyodide is
+   injected from its CDN on demand.
 
    The code is organized so later features can be added without
    rearchitecting. Search for "FUTURE:" markers for the planned, but
    intentionally out-of-scope, extension points:
-     - import blocking / source scanning
      - infinite-loop protection via a Web Worker + timeout
        (Pyodide runs on the main thread for now)
      - URL save / restore of the editor contents
      - keystroke recording
-     - auto-checking of exercises (the instructions pane already has a
-       hidden results slot, and runCode returns a result object)
    ========================================================= */
 
 // We import from the individual CodeMirror packages, NOT the "codemirror"
@@ -87,14 +89,92 @@ const PYODIDE_VERSION = "v0.26.4";
 const PYODIDE_INDEX_URL =
   "https://cdn.jsdelivr.net/pyodide/" + PYODIDE_VERSION + "/full/";
 
-// Friendly starter program shown when the page loads.
-const STARTER_CODE = [
-  "# Welcome to the Python Playground!",
-  "# Press Run to execute this code, then try changing it.",
-  "",
-  'print("Welcome to the Python Playground.")',
-  'print("Hello, World!")',
-].join("\n");
+/* ---- Assignments (loaded from /api/assignments) -------- */
+/*
+   Each assignment drives a rail entry, the right-hand panel, and the tester.
+   Tests are declarative data (no functions), so they can live in JSON:
+
+     - type "source": tested against the editor TEXT (does not run the
+       program). Uses a regex `pattern` (+ optional `flags`) or a `contains`
+       substring; optional `negate` flips the result.
+     - type "output": runs the program with `input` fed to input() in order,
+       captures stdout/stderr, and requires an EXACT match against the
+       expected output (character-for-character, including the newline that
+       print() adds). input() writes its prompt to stdout with no trailing
+       newline, which the expected string must reflect.
+
+   instructions HTML comes from the JSON a teacher authored, so it is trusted
+   and assigned with innerHTML. Student code is never placed into innerHTML —
+   only into textContent — so there is no injection surface.
+*/
+let assignments = [];
+
+function assignmentById(id) {
+  return assignments.find((a) => a.id === id) || assignments[0];
+}
+
+// Fetch + normalize the assignment files.
+async function loadAssignments() {
+  const res = await fetch("/api/assignments");
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const data = await res.json();
+  const list = Array.isArray(data) ? data : data.assignments || [];
+  return list.map(normalizeAssignment);
+}
+
+// Arrays for `starter`/`instructions` are joined into one string so multi-line
+// content reads nicely in the JSON source.
+function normalizeAssignment(raw) {
+  return {
+    id: String(raw.id),
+    name: raw.name || String(raw.id),
+    blurb: raw.blurb || "",
+    starter: joinLines(raw.starter),
+    instructionsHTML: joinLines(raw.instructions),
+    tests: Array.isArray(raw.tests) ? raw.tests.map(normalizeTest) : [],
+  };
+}
+
+function normalizeTest(t) {
+  return {
+    name: t.name || "Test",
+    type: t.type === "output" ? "output" : "source",
+    pattern: typeof t.pattern === "string" ? t.pattern : null,
+    flags: typeof t.flags === "string" ? t.flags : "",
+    contains: typeof t.contains === "string" ? t.contains : null,
+    negate: !!t.negate,
+    input: Array.isArray(t.input) ? t.input : [],
+    expected: buildExpected(t.expected),
+  };
+}
+
+// `expected` as a string is used verbatim; as an array it is treated as one
+// printed line each (joined with newlines + a trailing newline, matching the
+// common "one print() per line" case).
+function buildExpected(v) {
+  if (Array.isArray(v)) return v.length ? v.join("\n") + "\n" : "";
+  return typeof v === "string" ? v : "";
+}
+
+function joinLines(v) {
+  if (Array.isArray(v)) return v.join("\n");
+  return typeof v === "string" ? v : "";
+}
+
+// Evaluate a declarative "source" test against the code text.
+function sourceTestPasses(test, src) {
+  let hit = false;
+  if (test.pattern) {
+    try {
+      hit = new RegExp(test.pattern, test.flags).test(src);
+    } catch (e) {
+      hit = false; // a malformed pattern fails safe rather than throwing
+    }
+  } else if (test.contains) {
+    hit = src.includes(test.contains);
+  }
+  return test.negate ? !hit : hit;
+}
 
 /* ---- Element lookups ----------------------------------- */
 
@@ -102,6 +182,8 @@ const editorMount = document.getElementById("pyenv-editor");
 const outputEl = document.getElementById("pyenv-output");
 const runButton = document.getElementById("pyenv-run");
 const statusEl = document.getElementById("pyenv-status");
+const railEl = document.getElementById("pyenv-rail");
+const panelEl = document.getElementById("pyenv-panel");
 
 /* ---- Editor theming ------------------------------------ */
 
@@ -133,14 +215,28 @@ function editorThemeFor(siteTheme) {
 // await the same initialization rather than loading twice.
 let pyodideReady = null;
 
-// Guard against overlapping runs (e.g. double clicks mid-run).
-let isRunning = false;
+// Flipped true once Pyodide has finished loading. Used to enable the Run
+// and Test Code buttons (output tests can't run before Python is ready).
+let pyodideLoaded = false;
+
+// Guard against overlapping work (Run vs Test, double clicks mid-run).
+let isBusy = false;
+
+// Which assignment is selected, plus a per-assignment cache of editor
+// contents so switching back restores the student's work for the session.
+let activeId = null;
+const editorDocs = Object.create(null);
+
+// Filled in by the panel renderer so the tester can find its widgets.
+let testButton = null;
+let testListEl = null;
+let testStatusEl = null;
 
 /* ---- 1. Code editor (CodeMirror 6) --------------------- */
 
 function createEditor() {
   return new EditorView({
-    doc: STARTER_CODE,
+    doc: assignmentById(activeId).starter,
     parent: editorMount,
     extensions: [
       editorBasics, // gutter, history, bracket matching, editing keymaps
@@ -152,9 +248,16 @@ function createEditor() {
 }
 
 // Single source of truth for the current program text. A future
-// save/restore or auto-check layer should read code through here too.
+// save/restore layer should read code through here too.
 function getCode(editor) {
   return editor.state.doc.toString();
+}
+
+// Replace the entire document (used when switching assignments).
+function setCode(editor, text) {
+  editor.dispatch({
+    changes: { from: 0, to: editor.state.doc.length, insert: text },
+  });
 }
 
 /* ---- Theme synchronization ----------------------------- */
@@ -184,8 +287,10 @@ function preloadPyodide() {
   setStatus("Loading Python...");
   ensurePyodide()
     .then(function () {
+      pyodideLoaded = true;
       runButton.disabled = false;
       runButton.textContent = "Run";
+      if (testButton) testButton.disabled = false;
       setStatus("Ready");
     })
     .catch(function (err) {
@@ -220,7 +325,7 @@ function loadScript(src) {
   });
 }
 
-/* ---- 3. Run pipeline ----------------------------------- */
+/* ---- 3. Run pipeline (interactive) --------------------- */
 
 function wireRunButton(editor) {
   runButton.addEventListener("click", function () {
@@ -229,14 +334,15 @@ function wireRunButton(editor) {
 }
 
 async function runCode(editor) {
-  if (isRunning) return; // ignore clicks while a run is in progress
-  isRunning = true;
+  if (isBusy) return; // ignore clicks while a run/test is in progress
+  isBusy = true;
 
   runButton.disabled = true;
   runButton.textContent = "Running...";
+  if (testButton) testButton.disabled = true;
   clearOutput();
 
-  // Result shape kept stable for a FUTURE auto-check layer to consume.
+  // Result shape kept stable for callers/future hooks to consume.
   const result = { ok: true, error: null };
 
   try {
@@ -275,14 +381,13 @@ async function runCode(editor) {
     if (result.ok && outputEl.textContent === "") {
       appendOutput("Program finished with no output.\n");
     }
-    isRunning = false;
+    isBusy = false;
     runButton.disabled = false;
     runButton.textContent = "Run";
+    if (testButton) testButton.disabled = false;
     setStatus(result.ok ? "Finished" : "Finished with an error");
   }
 
-  // FUTURE (auto-check): hand `result` plus the captured output to a
-  // checker here, then render pass/fail into the .pyenv__check slot.
   return result;
 }
 
@@ -324,6 +429,314 @@ _flag
   } finally {
     ns.destroy();
   }
+}
+
+/* ---- 4. Tester ----------------------------------------- */
+
+// Run `source` once with a fixed list of input lines, capturing stdout and
+// stderr into a single string. Used only by the tester, so it does NOT pop
+// up the prompt dialog the interactive runner uses; instead canned input is
+// fed line-by-line and is not echoed (the program's own prints, including
+// any input() prompt, are the only thing captured). A fresh globals dict
+// isolates each test from the others.
+async function runForCapture(pyodide, source, inputLines) {
+  const decoder = new TextDecoder();
+  let captured = "";
+  const sink = function (bytes) {
+    captured += decoder.decode(bytes, { stream: true });
+    return bytes.length;
+  };
+
+  let i = 0;
+  const cannedStdin = function () {
+    if (i >= inputLines.length) return null; // EOF -> EOFError in Python
+    const line = String(inputLines[i++]).slice(0, MAX_STDIN_LINE);
+    return line + "\n";
+  };
+
+  pyodide.setStdout({ write: sink });
+  pyodide.setStderr({ write: sink });
+  pyodide.setStdin({ stdin: cannedStdin });
+
+  const globals = pyodide.toPy({});
+  try {
+    await pyodide.runPythonAsync(source, { globals });
+    return { ok: true, output: captured, error: null };
+  } catch (err) {
+    return { ok: false, output: captured, error: err };
+  } finally {
+    globals.destroy();
+  }
+}
+
+function wireTestButton(editor) {
+  // The button is (re)created with each panel render, so we delegate from
+  // the panel container instead of binding to a specific node.
+  panelEl.addEventListener("click", function (event) {
+    const btn = event.target.closest(".pyenv__test-btn");
+    if (btn) runTests(editor);
+  });
+}
+
+async function runTests(editor) {
+  if (isBusy) return;
+  const assignment = assignmentById(activeId);
+  if (!assignment.tests.length) return;
+
+  isBusy = true;
+  runButton.disabled = true;
+  if (testButton) {
+    testButton.disabled = true;
+    testButton.textContent = "Testing...";
+  }
+  setTestStatus("Running tests...");
+
+  const source = getCode(editor);
+  let passed = 0;
+
+  try {
+    const pyodide = await ensurePyodide();
+    const importsBlocked = hasImportStatement(pyodide, source);
+
+    // Render rows up front as "pending", then fill each in as it resolves.
+    renderTestRows(assignment.tests);
+
+    for (let idx = 0; idx < assignment.tests.length; idx++) {
+      const test = assignment.tests[idx];
+      let pass = false;
+      let detail = null;
+
+      if (importsBlocked) {
+        pass = false;
+        detail = {
+          text: "Imports are not allowed here — remove the import to run the tests.",
+        };
+      } else if (test.type === "source") {
+        pass = sourceTestPasses(test, source);
+        if (!pass) detail = { text: "Your code doesn't include this yet." };
+      } else {
+        // output test
+        const res = await runForCapture(pyodide, source, test.input || []);
+        if (!res.ok) {
+          pass = false;
+          detail = { text: "Your program raised an error:", got: res.output + formatError(res.error) };
+        } else {
+          pass = res.output === test.expected;
+          if (!pass) {
+            detail = { text: "Output didn't match exactly.", expected: test.expected, got: res.output };
+          }
+        }
+      }
+
+      if (pass) passed++;
+      updateTestRow(idx, pass, detail);
+    }
+  } finally {
+    isBusy = false;
+    runButton.disabled = false;
+    if (testButton) {
+      testButton.disabled = false;
+      testButton.textContent = "Test Code";
+    }
+    const total = assignment.tests.length;
+    setTestStatus(
+      passed === total
+        ? "All " + total + " tests passed. 🎉"
+        : passed + " of " + total + " tests passed."
+    );
+  }
+}
+
+/* ---- 5. Rail + panel rendering ------------------------- */
+
+function renderRail() {
+  railEl.innerHTML = "";
+
+  const title = document.createElement("h2");
+  title.className = "pyenv__rail-title";
+  title.textContent = "Assignments";
+  railEl.appendChild(title);
+
+  const list = document.createElement("ul");
+  list.className = "pyenv__pick-list";
+
+  assignments.forEach(function (a, i) {
+    const li = document.createElement("li");
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "pyenv__pick" + (a.id === activeId ? " is-active" : "");
+    btn.dataset.id = a.id;
+    if (a.id === activeId) btn.setAttribute("aria-current", "true");
+
+    const name = document.createElement("span");
+    name.className = "pyenv__pick-name";
+    // Number comes from the file order, so authors don't manage numbering.
+    name.textContent = i + 1 + " · " + a.name;
+    const blurb = document.createElement("span");
+    blurb.className = "pyenv__pick-blurb";
+    blurb.textContent = a.blurb;
+
+    btn.appendChild(name);
+    btn.appendChild(blurb);
+    li.appendChild(btn);
+    list.appendChild(li);
+  });
+
+  railEl.appendChild(list);
+}
+
+function renderPanel() {
+  const assignment = assignmentById(activeId);
+  panelEl.innerHTML = "";
+  testButton = testListEl = testStatusEl = null;
+
+  const heading = document.createElement("h2");
+  heading.className = "pyenv__heading";
+  heading.textContent = assignment.name;
+  panelEl.appendChild(heading);
+
+  const prose = document.createElement("div");
+  prose.className = "pyenv__prose";
+  prose.innerHTML = assignment.instructionsHTML; // trusted, authored in JSON
+  panelEl.appendChild(prose);
+
+  if (!assignment.tests.length) return; // open playground: no tester
+
+  const tests = document.createElement("div");
+  tests.className = "pyenv__tests";
+
+  testButton = document.createElement("button");
+  testButton.type = "button";
+  testButton.className = "pyenv__test-btn";
+  testButton.textContent = "Test Code";
+  // Disabled until Pyodide is ready (output tests need it).
+  testButton.disabled = !pyodideLoaded;
+  tests.appendChild(testButton);
+
+  testStatusEl = document.createElement("span");
+  testStatusEl.className = "pyenv__test-status";
+  testStatusEl.setAttribute("role", "status");
+  testStatusEl.setAttribute("aria-live", "polite");
+  testStatusEl.textContent = "Click Test Code to check your work.";
+  tests.appendChild(testStatusEl);
+
+  testListEl = document.createElement("ul");
+  testListEl.className = "pyenv__test-list";
+  tests.appendChild(testListEl);
+
+  panelEl.appendChild(tests);
+
+  // Show the test names in their starting (un-run) state.
+  renderTestRows(assignment.tests);
+}
+
+// (Re)draw all test rows in the pending state (icon "•", no detail).
+function renderTestRows(tests) {
+  if (!testListEl) return;
+  testListEl.innerHTML = "";
+  tests.forEach(function (test) {
+    const li = document.createElement("li");
+    li.className = "pyenv__test";
+
+    const icon = document.createElement("span");
+    icon.className = "pyenv__test-icon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = "•";
+
+    const name = document.createElement("span");
+    name.className = "pyenv__test-name";
+    name.textContent = test.name;
+
+    li.appendChild(icon);
+    li.appendChild(name);
+    testListEl.appendChild(li);
+  });
+}
+
+// Update one row to pass/fail and (optionally) render a detail block.
+function updateTestRow(index, pass, detail) {
+  if (!testListEl) return;
+  const li = testListEl.children[index];
+  if (!li) return;
+
+  li.classList.remove("pyenv__test--pass", "pyenv__test--fail");
+  li.classList.add(pass ? "pyenv__test--pass" : "pyenv__test--fail");
+
+  const icon = li.querySelector(".pyenv__test-icon");
+  if (icon) {
+    icon.textContent = pass ? "✓" : "✗";
+    icon.setAttribute("aria-label", pass ? "Passed: " : "Failed: ");
+  }
+
+  // Clear any prior detail.
+  const old = li.querySelector(".pyenv__test-detail");
+  if (old) old.remove();
+
+  if (!pass && detail) {
+    const wrap = document.createElement("div");
+    wrap.className = "pyenv__test-detail";
+
+    const text = document.createElement("p");
+    text.style.margin = "0";
+    text.textContent = detail.text || "";
+    wrap.appendChild(text);
+
+    if (typeof detail.expected === "string") {
+      const exp = document.createElement("pre");
+      exp.className = "is-expected";
+      exp.textContent = visibleWhitespace(detail.expected);
+      wrap.appendChild(labeled("Expected", exp));
+    }
+    if (typeof detail.got === "string") {
+      const got = document.createElement("pre");
+      got.textContent = visibleWhitespace(detail.got);
+      wrap.appendChild(labeled("Your output", got));
+    }
+
+    li.appendChild(wrap);
+  }
+}
+
+// Wrap a <pre> with a small caption, returning a fragment.
+function labeled(label, pre) {
+  const frag = document.createDocumentFragment();
+  const cap = document.createElement("span");
+  cap.textContent = label + ":";
+  frag.appendChild(cap);
+  frag.appendChild(pre);
+  return frag;
+}
+
+// Make newlines visible in the expected/actual blocks so an "exact match"
+// failure caused only by a missing/extra newline is legible.
+function visibleWhitespace(text) {
+  return text.replace(/\n/g, "⏎\n");
+}
+
+/* ---- Assignment switching ------------------------------ */
+
+function wireRailSelection(editor) {
+  railEl.addEventListener("click", function (event) {
+    const btn = event.target.closest(".pyenv__pick");
+    if (!btn) return;
+    selectAssignment(editor, btn.dataset.id);
+  });
+}
+
+function selectAssignment(editor, id) {
+  if (id === activeId || isBusy) return;
+
+  // Preserve the current assignment's work before switching away.
+  editorDocs[activeId] = getCode(editor);
+
+  activeId = id;
+  const next = id in editorDocs ? editorDocs[id] : assignmentById(id).starter;
+  setCode(editor, next);
+
+  clearOutput();
+  setStatus("Ready");
+  renderRail();
+  renderPanel();
 }
 
 /* ---- Output helpers ------------------------------------ */
@@ -396,17 +809,69 @@ function setStatus(text) {
   if (statusEl) statusEl.textContent = text;
 }
 
-/* ---- Boot ---------------------------------------------- */
-
-// Initialize only when the playground markup is present. Running this
-// after all declarations avoids referencing consts before they exist.
-function initPlayground() {
-  const editor = createEditor();
-  wireThemeSync(editor);
-  wireRunButton(editor);
-  preloadPyodide();
+function setTestStatus(text) {
+  if (testStatusEl) testStatusEl.textContent = text;
 }
 
-if (editorMount && outputEl && runButton) {
+/* ---- Boot ---------------------------------------------- */
+
+// Show a brief placeholder in the rail while the assignment files load.
+function showLoadingState() {
+  railEl.innerHTML = "";
+  const p = document.createElement("p");
+  p.className = "pyenv__note";
+  p.style.padding = "0.85rem";
+  p.textContent = "Loading assignments…";
+  railEl.appendChild(p);
+}
+
+// Surface a load failure in the panel rather than leaving a blank page.
+function showLoadError(err) {
+  panelEl.innerHTML = "";
+  const h = document.createElement("h2");
+  h.className = "pyenv__heading";
+  h.textContent = "Couldn't load assignments";
+  const p = document.createElement("p");
+  p.className = "pyenv__prose";
+  p.textContent =
+    "Please refresh the page. (" +
+    (err && err.message ? err.message : String(err)) +
+    ")";
+  panelEl.appendChild(h);
+  panelEl.appendChild(p);
+  console.error("Failed to load assignments:", err);
+}
+
+// Initialize only when the playground markup is present. Assignments are
+// fetched first (Python loads in parallel), then the editor/rail/panel are
+// built around the first assignment.
+async function initPlayground() {
+  preloadPyodide(); // start Python loading immediately, in the background
+  showLoadingState();
+
+  try {
+    assignments = await loadAssignments();
+  } catch (err) {
+    showLoadError(err);
+    return;
+  }
+  if (!assignments.length) {
+    showLoadError(new Error("No assignment files found."));
+    return;
+  }
+
+  activeId = assignments[0].id;
+  editorDocs[activeId] = assignmentById(activeId).starter;
+
+  const editor = createEditor();
+  renderRail();
+  renderPanel();
+  wireThemeSync(editor);
+  wireRunButton(editor);
+  wireRailSelection(editor);
+  wireTestButton(editor);
+}
+
+if (editorMount && outputEl && runButton && railEl && panelEl) {
   initPlayground();
 }

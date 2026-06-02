@@ -33,6 +33,14 @@
   --color-accent:       #005FB8;  /* links, active tab, focus (6.30:1 on white) */
   --color-accent-soft:  rgba(0, 95, 184, 0.10);
 
+  /* Pass / fail — used only by the playground tester for ✓ / ✗ status.
+     A deliberate exception to the accent-only rule: a green/red signal is
+     the whole point of a test result. Tuned for contrast on --color-surface. */
+  --color-pass:         #1A7F37;  /* green check  (4.9:1 on white) */
+  --color-pass-soft:    rgba(26, 127, 55, 0.10);
+  --color-fail:         #CF222E;  /* red X        (5.5:1 on white) */
+  --color-fail-soft:    rgba(207, 34, 46, 0.10);
+
   /* Home hero dot-grid backdrop color (themed separately so it stays
      visible in both modes). */
   --hero-dot:           rgba(0, 95, 184, 0.22);
@@ -70,6 +78,12 @@
   --color-tab-active:   #1F1F1F;  /* active tab matches surface */
   --color-accent:       #4FC1FF;  /* links, active tab, focus (8.16:1 on surface) */
   --color-accent-soft:  rgba(79, 193, 255, 0.15);
+
+  /* Brighter green/red so test results read clearly on the dark surface. */
+  --color-pass:         #3FB950;
+  --color-pass-soft:    rgba(63, 185, 80, 0.16);
+  --color-fail:         #FF7B72;
+  --color-fail-soft:    rgba(255, 123, 114, 0.16);
 
   /* Brighter blue dots so the hero backdrop reads clearly on dark surfaces. */
   --hero-dot:           rgba(79, 193, 255, 0.38);
@@ -326,17 +340,61 @@ button { font: inherit; cursor: pointer; }
   align-items: start;
 }
 
-/* Desktop: instructions sit beside the editor column.
-   minmax(0, 1fr) lets the editor column shrink inside a constrained
-   Canvas iframe instead of forcing the page wider. */
-@media (min-width: 880px) {
+/* Wide screens: VS Code-style three columns — assignment rail | coding
+   window | assignment + tests — in a roughly 1 : 4 : 2 ratio. minmax(0, …)
+   on the center track lets the editor shrink inside a constrained iframe
+   instead of forcing the page wider; the side tracks keep usable minimums. */
+@media (min-width: 1024px) {
   .pyenv {
-    grid-template-columns: minmax(240px, 22rem) minmax(0, 1fr);
+    grid-template-columns: minmax(150px, 1fr) minmax(0, 4fr) minmax(240px, 2fr);
   }
 }
 
-/* Instructions pane: matches the site's card aesthetic. */
-.pyenv__instructions {
+/* --- Left rail: assignment picker ------------------------- */
+.pyenv__rail {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.pyenv__rail-title {
+  font: 600 0.78rem/1 var(--font-sans);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink-muted);
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.pyenv__pick-list { list-style: none; margin: 0; padding: 0.35rem; }
+.pyenv__pick {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  border-left: 3px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 0.55rem 0.7rem;
+  color: var(--color-ink);
+  transition: background 120ms var(--ease), border-color 120ms var(--ease);
+}
+.pyenv__pick:hover { background: var(--color-tab-bg-hover); }
+.pyenv__pick.is-active {
+  background: var(--color-accent-soft);
+  border-left-color: var(--color-accent);
+}
+.pyenv__pick:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: -2px;
+}
+.pyenv__pick-name { display: block; font-weight: 600; font-size: 0.92rem; }
+.pyenv__pick-blurb { display: block; font-size: 0.78rem; color: var(--color-ink-muted); }
+
+/* --- Right panel: instructions + tester ------------------- */
+/* Shares the card aesthetic with the rail. */
+.pyenv__panel {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -364,10 +422,100 @@ button { font: inherit; cursor: pointer; }
   padding: 0.1em 0.35em;
   border-radius: var(--radius-sm);
 }
+.pyenv__prose pre {
+  margin: 0 0 0.75rem;
+  padding: 0.7rem 0.85rem;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow-x: auto;
+}
+.pyenv__prose pre code {
+  background: none;
+  color: var(--color-ink);
+  padding: 0;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
 .pyenv__note {
   color: var(--color-ink-muted);
   font-size: 0.85rem;
 }
+
+/* --- Tester (inside the right panel) ---------------------- */
+.pyenv__tests {
+  margin-top: 1.1rem;
+  padding-top: 1.1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+/* "Test Code" button — a ghost variant of the Run button so it reads as
+   a secondary action sitting next to the primary green/red feedback. */
+.pyenv__test-btn {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--color-accent);
+  background: var(--color-accent-soft);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 1rem;
+  transition: filter 150ms var(--ease), opacity 150ms var(--ease);
+}
+.pyenv__test-btn:hover:not(:disabled) { filter: brightness(1.06); }
+.pyenv__test-btn:disabled { opacity: 0.55; cursor: default; }
+.pyenv__test-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.pyenv__test-status {
+  display: block;
+  margin-top: 0.6rem;
+  font-size: 0.85rem;
+  color: var(--color-ink-muted);
+}
+
+.pyenv__test-list { list-style: none; margin: 0.75rem 0 0; padding: 0; }
+.pyenv__test {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  gap: 0.5rem;
+  align-items: start;
+  padding: 0.4rem 0;
+  border-top: 1px solid var(--color-border);
+}
+.pyenv__test:first-child { border-top: 0; }
+.pyenv__test-icon {
+  font-weight: 700;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--color-ink-muted); /* pending */
+}
+.pyenv__test--pass .pyenv__test-icon { color: var(--color-pass); }
+.pyenv__test--fail .pyenv__test-icon { color: var(--color-fail); }
+.pyenv__test-name { font-size: 0.9rem; line-height: 1.4; }
+.pyenv__test--pass .pyenv__test-name { color: var(--color-ink); }
+.pyenv__test--fail .pyenv__test-name { color: var(--color-ink); }
+
+/* Optional expected-vs-actual detail shown under a failed output test. */
+.pyenv__test-detail {
+  grid-column: 2;
+  margin: 0.35rem 0 0;
+  font-size: 0.82rem;
+  color: var(--color-ink-muted);
+}
+.pyenv__test-detail pre {
+  margin: 0.2rem 0 0.4rem;
+  padding: 0.4rem 0.6rem;
+  background: var(--color-fail-soft);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.pyenv__test-detail .is-expected { background: var(--color-pass-soft); }
 
 /* Primary column: toolbar, editor, then output stacked vertically. */
 .pyenv__main {

@@ -1,0 +1,19 @@
+{
+  "id": "open",
+  "name": "Open Playground",
+  "blurb": "Free play — no checks",
+  "starter": [
+    "# Welcome to the Python Playground!",
+    "# This is free play — there are no tests here.",
+    "# Press Run to execute your code, then try changing it.",
+    "",
+    "print(\"Welcome to the Python Playground.\")",
+    "print(\"Hello, World!\")"
+  ],
+  "instructions": [
+    "<p>This is your open sandbox. Write any Python you like in the editor, then press <strong>Run</strong> to see what it does in the Output panel.</p>",
+    "<p>When you are ready for a challenge, pick an assignment from the list on the left.</p>",
+    "<p class=\"pyenv__note\">Your code runs entirely in your browser. Nothing is sent to a server. Imports are turned off for these activities.</p>"
+  ],
+  "tests": []
+}

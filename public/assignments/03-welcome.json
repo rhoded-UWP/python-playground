@@ -1,0 +1,36 @@
+{
+  "id": "welcome",
+  "name": "Welcome & Name",
+  "blurb": "Use input()",
+  "starter": [
+    "# Assignment: recreate the three-line welcome program.",
+    "# See the instructions on the right, then click Test Code.",
+    ""
+  ],
+  "instructions": [
+    "<p>Write a three-line program that greets the user by name:</p>",
+    "<ol>",
+    "<li>Print <code>Welcome to Python Playground</code></li>",
+    "<li>Ask for the user's name with <code>input(\"Please enter your name?\")</code> and store it in a variable called <code>user</code></li>",
+    "<li>Print <code>Welcome</code>, the name, then <code>You will learn a lot about Python here!</code> using a single <code>print(...)</code> with commas</li>",
+    "</ol>"
+  ],
+  "tests": [
+    {
+      "name": "Uses input() to read the name",
+      "type": "source",
+      "pattern": "\\binput\\s*\\("
+    },
+    {
+      "name": "Stores the input in a variable",
+      "type": "source",
+      "pattern": "\\w+\\s*=\\s*input\\s*\\("
+    },
+    {
+      "name": "Greets the entered name correctly (entered \"Ada\")",
+      "type": "output",
+      "input": ["Ada"],
+      "expected": "Welcome to Python Playground\nPlease enter your name?Welcome Ada You will learn a lot about Python here!\n"
+    }
+  ]
+}
