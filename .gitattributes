@@ -1,0 +1,19 @@
+# Make line endings deterministic across machines and stop Git's
+# "LF will be replaced by CRLF" warnings on Windows.
+#
+# Text files are stored with LF in the repository AND checked out with LF
+# everywhere (eol=lf). This is the right default for a Node/Express + static
+# web project — browsers, Node, and modern editors all handle LF fine, and it
+# overrides a machine-level core.autocrlf=true so the working tree stays LF.
+* text=auto eol=lf
+
+# Binary assets — never normalize or diff these as text.
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.webp binary
+*.svg  text
+*.woff  binary
+*.woff2 binary
