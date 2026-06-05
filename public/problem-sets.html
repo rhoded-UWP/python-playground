@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Curated Python problem sets organized by topic and difficulty." />
+  <meta name="description" content="Server-checked Python problem sets. Answers stay on the server." />
   <title>Problem Sets | Python Playground</title>
   <script>
     (function () {
@@ -14,7 +14,16 @@
       } catch (e) {}
     })();
   </script>
+  <!-- Site shell styles, then the page-scoped Problem Sets styles. -->
   <link rel="stylesheet" href="/css/styles.css" />
+  <!-- Problem Sets widget fonts: Outfit (UI) + JetBrains Mono (code).
+       Scoped to the activity in problem-sets.css so the rest of the site
+       keeps its own font stack. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;500;600;700&display=swap" />
+  <link rel="stylesheet" href="/css/problem-sets.css" />
 </head>
 <body data-page="problems">
   <header class="site-header">
@@ -44,16 +53,18 @@
     </div>
   </header>
 
-  <main id="main" class="page">
-    <section class="page__hero" aria-labelledby="page-title">
-      <h1 id="page-title">Problem Sets</h1>
-    </section>
+  <main id="main" class="page ps-page">
+    <div class="ps-app">
+      <!-- 1/4 column: pick a problem set. Rendered by problem-set.js. -->
+      <aside class="ps-rail" id="ps-rail" aria-label="Problem sets">
+        <p class="ps-note">Loading problem sets...</p>
+      </aside>
 
-    <section class="page__body" aria-label="Content">
-      <article class="content-block">
-        <!-- Page content goes here -->
-      </article>
-    </section>
+      <!-- 3/4 column: the selected activity. Rendered by problem-set.js. -->
+      <section class="ps-main" id="ps-main" aria-live="polite">
+        <p class="ps-note">Pick a problem set from the list.</p>
+      </section>
+    </div>
   </main>
 
   <footer class="site-footer">
@@ -63,5 +74,6 @@
   </footer>
 
   <script src="/js/main.js" defer></script>
+  <script type="module" src="/js/problem-set.js"></script>
 </body>
 </html>

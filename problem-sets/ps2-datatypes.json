@@ -1,0 +1,25 @@
+{
+  "setId": "ps2",
+  "setTitle": "Hello, Problem Sets!",
+  "order": 2,
+  "id": "ps2-datatypes",
+  "part": "Data Types",
+  "partOrder": 2,
+  "type": "valid-invalid-type",
+  "instructions": [
+    "Decide whether each identifier is Valid or Invalid in Python.",
+    "Then pick the data type of the value: string, integer, float, or boolean."
+  ],
+  "rows": [
+    { "id": "1", "code": "_this_is_CRAZY = 7", "answers": { "validity": "Valid", "dataType": "integer" } },
+    { "id": "2", "code": "I like Python = True", "answers": { "validity": "Invalid", "dataType": "boolean" } },
+    { "id": "3", "code": "user name = \"name\"", "answers": { "validity": "Invalid", "dataType": "string" } },
+    { "id": "4", "code": "_plus_7 = 7.777000001", "answers": { "validity": "Valid", "dataType": "float" } },
+    { "id": "5", "code": "car_count = 1", "answers": { "validity": "Valid", "dataType": "integer" } },
+    { "id": "6", "code": "number-squared = 49", "answers": { "validity": "Invalid", "dataType": "integer" } },
+    { "id": "7", "code": "money99 = '99'", "answers": { "validity": "Valid", "dataType": "string" } },
+    { "id": "8", "code": "329Busby = True", "answers": { "validity": "Invalid", "dataType": "boolean" } },
+    { "id": "9", "code": "fun = 'CS1430'", "answers": { "validity": "Valid", "dataType": "string" } },
+    { "id": "10", "code": "2fun = \"CS2430\"", "answers": { "validity": "Invalid", "dataType": "string" } }
+  ]
+}

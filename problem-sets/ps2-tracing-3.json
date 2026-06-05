@@ -1,0 +1,27 @@
+{
+  "setId": "ps2",
+  "setTitle": "Hello, Problem Sets!",
+  "order": 2,
+  "id": "ps2-tracing-3",
+  "part": "Variable Tracing #3",
+  "partOrder": 5,
+  "type": "variable-trace",
+  "instructions": [
+    "Can you trace two variables at once? Type the value of foo and bar after each line.",
+    "Use a dash - if a variable is not defined yet.",
+    "If the value is a string, include the quotation marks, for example \"a\".",
+    "# count to 10 --> 1, 2, 3, 4, 5, 6, 7, 8, 10",
+    "# What happened to 9? Get it?!?"
+  ],
+  "columns": ["foo", "bar"],
+  "rows": [
+    { "id": "1", "code": "foo = 3", "answers": { "foo": "3", "bar": "-" } },
+    { "id": "2", "code": "bar = \"a\"", "answers": { "foo": "3", "bar": "\"a\"" } },
+    { "id": "3", "code": "foo = foo * (1 + 2)", "answers": { "foo": "9", "bar": "\"a\"" } },
+    { "id": "4", "code": "bar = bar + \"te\"", "answers": { "foo": "9", "bar": "\"ate\"" } },
+    { "id": "5", "code": "bar = bar + str(foo)", "answers": { "foo": "9", "bar": "\"ate9\"" } },
+    { "id": "6", "code": "foo = 16 - 9", "answers": { "foo": "7", "bar": "\"ate9\"" } },
+    { "id": "7", "code": "foo = str(foo)", "answers": { "foo": "\"7\"", "bar": "\"ate9\"" } },
+    { "id": "8", "code": "foo = foo + bar", "answers": { "foo": "\"7ate9\"", "bar": "\"ate9\"" } }
+  ]
+}

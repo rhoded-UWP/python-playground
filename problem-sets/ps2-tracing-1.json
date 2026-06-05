@@ -1,0 +1,26 @@
+{
+  "setId": "ps2",
+  "setTitle": "Hello, Problem Sets!",
+  "order": 2,
+  "id": "ps2-tracing-1",
+  "part": "Variable Tracing #1",
+  "partOrder": 3,
+  "type": "variable-trace",
+  "instructions": [
+    "Run the code in your head, line by line.",
+    "Type the value of result after each line."
+  ],
+  "columns": ["result"],
+  "rows": [
+    { "id": "1", "code": "result = 7", "answers": { "result": "7" } },
+    { "id": "2", "code": "result = 5", "answers": { "result": "5" } },
+    { "id": "3", "code": "result = 3 + 5", "answers": { "result": "8" } },
+    { "id": "4", "code": "result = 2", "answers": { "result": "2" } },
+    { "id": "5", "code": "result = result + 2", "answers": { "result": "4" } },
+    { "id": "6", "code": "result = result * 2", "answers": { "result": "8" } },
+    { "id": "7", "code": "result = result - 2", "answers": { "result": "6" } },
+    { "id": "8", "code": "foo = 12", "answers": { "result": "6" } },
+    { "id": "9", "code": "result = result + foo", "answers": { "result": "18" } },
+    { "id": "10", "code": "result = result - 8", "answers": { "result": "10" } }
+  ]
+}

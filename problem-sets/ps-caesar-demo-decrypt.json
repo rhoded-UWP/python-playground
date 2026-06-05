@@ -1,0 +1,23 @@
+{
+  "setId": "caesar-demo",
+  "setTitle": "Caesar Cipher Demo",
+  "demo": true,
+  "id": "caesar-demo-decrypt",
+  "part": "Decrypt UDYMTS (shift 5)",
+  "partOrder": 2,
+  "type": "caesar-cipher",
+  "shift": 5,
+  "direction": "decrypt",
+  "instructions": [
+    "Decrypt each letter by shifting it backward 5 places in the alphabet.",
+    "Letters wrap around, so C becomes X. Type the decrypted letter for each position."
+  ],
+  "rows": [
+    { "id": "1", "char": "U", "answer": "P" },
+    { "id": "2", "char": "D", "answer": "Y" },
+    { "id": "3", "char": "Y", "answer": "T" },
+    { "id": "4", "char": "M", "answer": "H" },
+    { "id": "5", "char": "T", "answer": "O" },
+    { "id": "6", "char": "S", "answer": "N" }
+  ]
+}

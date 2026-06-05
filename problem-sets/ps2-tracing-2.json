@@ -1,0 +1,26 @@
+{
+  "setId": "ps2",
+  "setTitle": "Hello, Problem Sets!",
+  "order": 2,
+  "id": "ps2-tracing-2",
+  "part": "Variable Tracing #2",
+  "partOrder": 4,
+  "type": "variable-trace",
+  "instructions": [
+    "Type the value of result after each line.",
+    "If the value is a string, include the quotation marks, for example \"2\"."
+  ],
+  "columns": ["result"],
+  "rows": [
+    { "id": "1", "code": "result = 3", "answers": { "result": "3" } },
+    { "id": "2", "code": "result = result + .14", "answers": { "result": "3.14" } },
+    { "id": "3", "code": "result = 2", "answers": { "result": "2" } },
+    { "id": "4", "code": "result = result + (4 * 5)", "answers": { "result": "22" } },
+    { "id": "5", "code": "result = float(result)", "answers": { "result": "22.0" } },
+    { "id": "6", "code": "result = 1 + (2 * 3 ) + 4 * 5", "answers": { "result": "27" } },
+    { "id": "7", "code": "result = result - 1 * (3 + 3)", "answers": { "result": "21" } },
+    { "id": "8", "code": "result = \"4\"", "answers": { "result": "\"4\"" } },
+    { "id": "9", "code": "result = result + \"4\"", "answers": { "result": "\"44\"" } },
+    { "id": "10", "code": "result = int(result)", "answers": { "result": "44" } }
+  ]
+}

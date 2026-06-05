@@ -1,0 +1,33 @@
+{
+  "setId": "freeform-demo",
+  "setTitle": "Write Python Demo",
+  "demo": true,
+  "id": "freeform-demo-print",
+  "part": "Write the line",
+  "partOrder": 1,
+  "type": "free-form",
+  "instructions": [
+    "Write one line of Python that does what each row asks.",
+    "For now your line is checked by an exact match, so match the spacing and quotes shown in class."
+  ],
+  "rows": [
+    {
+      "id": "1",
+      "prompt": "Print the word hello (lowercase, in double quotes).",
+      "answer": "print(\"hello\")",
+      "hint": "Use print() with the text inside double quotes."
+    },
+    {
+      "id": "2",
+      "prompt": "Create a variable named age and set it to the integer 19.",
+      "answer": "age = 19",
+      "hint": "name = value, with no quotes around a number."
+    },
+    {
+      "id": "3",
+      "prompt": "Print the result of 6 + 7 by typing the math, not the answer.",
+      "answer": "print(6 + 7)",
+      "hint": "Put 6 + 7 inside print(), with single spaces around the plus sign."
+    }
+  ]
+}

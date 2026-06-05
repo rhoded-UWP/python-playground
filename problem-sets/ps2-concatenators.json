@@ -1,0 +1,25 @@
+{
+  "setId": "ps2",
+  "setTitle": "Hello, Problem Sets!",
+  "order": 2,
+  "id": "ps2-concatenators",
+  "part": "Concatenators",
+  "partOrder": 1,
+  "type": "predict-output",
+  "instructions": [
+    "Read each line of Python and type the exact output it would print.",
+    "If the line is not valid Python, type error."
+  ],
+  "rows": [
+    { "id": "1", "code": "print(\"I like\", \"CS1430\")", "answer": "I like CS1430" },
+    { "id": "2", "code": "print(\"I like\" + \"CS1430\")", "answer": "I likeCS1430" },
+    { "id": "3", "code": "print(I + like + CS1430)", "answer": "error" },
+    { "id": "4", "code": "print(\"Python\", \"i\" + \"s awesome\")", "answer": "Python is awesome" },
+    { "id": "5", "code": "print(\"py\",\"thon is\" + \"awesome\")", "answer": "py thon isawesome" },
+    { "id": "6", "code": "print(\"Assignment 1:\", \"Cost of College\")", "answer": "Assignment 1: Cost of College" },
+    { "id": "7", "code": "print(\"Assignment\" + \"_1\", \"50 points\")", "answer": "Assignment_1 50 points" },
+    { "id": "8", "code": "print(\"Quiz 1: 50 points,next Friday\")", "answer": "Quiz 1: 50 points,next Friday" },
+    { "id": "9", "code": "print(\"this is so\", fun!!!)", "answer": "error" },
+    { "id": "10", "code": "print(\"Thanks\", \"for\" + \"reviewing this\")", "answer": "Thanks forreviewing this" }
+  ]
+}

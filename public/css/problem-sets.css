@@ -1,0 +1,343 @@
+/* =========================================================
+   Problem Sets page (problem-sets.html only)
+
+   Scoped under .ps-app so the JetBrains Mono + Outfit widget look
+   applies here without changing the rest of the site. Colors reuse the
+   shared dark theme tokens from tokens.css, including --color-pass and
+   --color-fail for the correct / incorrect states. Correct and incorrect
+   are shown with an ICON as well as color, so they do not rely on color
+   alone.
+   ========================================================= */
+
+/* ---- Layout: 1/4 rail + 3/4 activity ----------------------------------- */
+.ps-page {
+  max-width: var(--container-max);
+  width: 100%;
+  margin-inline: auto;
+  padding-inline: clamp(1rem, 3vw, 2rem);
+}
+
+.ps-app {
+  /* Widget fonts, scoped here. UI text is Outfit; code is JetBrains Mono. */
+  font-family: "Outfit", var(--font-sans);
+  display: grid;
+  grid-template-columns: minmax(230px, 1fr) 3fr;
+  gap: clamp(1rem, 2.5vw, 1.75rem);
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .ps-app { grid-template-columns: 1fr; }
+}
+
+.ps-app code,
+.ps-app kbd,
+.ps-app input,
+.ps-app select,
+.ps-app textarea,
+.ps-app .ps-code {
+  font-family: "JetBrains Mono", var(--font-mono);
+}
+
+.ps-note {
+  color: var(--color-ink-muted);
+  margin: 0;
+  padding: 0.75rem;
+  font-size: 0.95rem;
+}
+
+/* ---- Left rail: pick a set --------------------------------------------- */
+.ps-rail {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 0.75rem;
+  position: sticky;
+  top: calc(var(--header-h) + 0.75rem);
+  box-shadow: var(--shadow-sm);
+}
+
+.ps-rail__title {
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-ink-muted);
+  margin: 0.35rem 0.4rem 0.6rem;
+}
+
+.ps-rail__group + .ps-rail__group { margin-top: 0.9rem; }
+
+.ps-rail__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.ps-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: var(--radius-md);
+  padding: 0.55rem 0.7rem;
+  color: var(--color-ink);
+  cursor: pointer;
+  font: inherit;
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease);
+}
+
+.ps-slot:hover { background: var(--color-tab-bg-hover); }
+
+.ps-slot:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.ps-slot.is-active {
+  background: var(--color-accent-soft);
+  border-color: var(--color-accent);
+}
+
+.ps-slot__name { font-weight: 600; font-size: 0.95rem; }
+
+.ps-slot__meta {
+  font-size: 0.8rem;
+  color: var(--color-ink-muted);
+}
+
+/* Placeholder slots (no content yet) read as muted and are not clickable. */
+.ps-slot.is-empty {
+  cursor: default;
+  opacity: 0.6;
+}
+.ps-slot.is-empty:hover { background: transparent; }
+
+/* ---- Right side: the activity ------------------------------------------ */
+.ps-main {
+  min-width: 0; /* let wide code lines scroll instead of stretching the grid */
+}
+
+.ps-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.ps-toolbar__meta { display: flex; flex-direction: column; gap: 0.15rem; }
+.ps-toolbar__title { margin: 0; font-size: 1.3rem; font-weight: 700; }
+.ps-toolbar__points { color: var(--color-ink-muted); font-size: 0.9rem; }
+
+.ps-toolbar__actions { display: flex; gap: 0.5rem; }
+
+/* Big live score: earned / total. The earned count is green so progress
+   pops; the total stays muted. */
+.ps-score {
+  font-family: "JetBrains Mono", var(--font-mono);
+  font-weight: 700;
+  font-size: clamp(1.8rem, 4.5vw, 2.6rem);
+  line-height: 1;
+  white-space: nowrap;
+  letter-spacing: 0.01em;
+}
+.ps-score__earned { color: var(--color-pass); }
+.ps-score__sep,
+.ps-score__total { color: var(--color-ink-muted); }
+
+/* Buttons */
+.ps-btn {
+  font: inherit;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  transition: background 0.15s var(--ease), border-color 0.15s var(--ease), opacity 0.15s var(--ease);
+}
+.ps-btn:hover { border-color: var(--color-accent); }
+.ps-btn:focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+.ps-btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+
+.ps-btn--primary {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+[data-theme="dark"] .ps-btn--primary { color: #08243a; }
+.ps-btn--primary:hover { filter: brightness(1.05); }
+
+/* ---- Capture area (this is what becomes the submitted PNG) ------------- */
+.ps-capture {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: clamp(1rem, 2.5vw, 1.6rem);
+  box-shadow: var(--shadow-sm);
+}
+
+.ps-capture__head {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+}
+.ps-capture__title { margin: 0; font-size: 1.15rem; font-weight: 700; }
+.ps-capture__stamp {
+  margin: 0.35rem 0 0;
+  color: var(--color-ink-muted);
+  font-size: 0.9rem;
+}
+.ps-capture__stamp:empty { display: none; }
+
+/* ---- A part (one section of the set) ----------------------------------- */
+.ps-part { margin-top: 1.5rem; }
+.ps-part:first-child { margin-top: 0; }
+
+.ps-part__title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.ps-part__instructions {
+  margin: 0 0 0.85rem;
+  color: var(--color-ink-muted);
+  font-size: 0.9rem;
+}
+.ps-part__instructions p { margin: 0.15rem 0; }
+
+/* ---- Rows table -------------------------------------------------------- */
+.ps-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+.ps-table th {
+  text-align: left;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-muted);
+  font-weight: 600;
+  padding: 0.4rem 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+}
+.ps-table td {
+  padding: 0.45rem 0.6rem;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: middle;
+}
+.ps-table tr:last-child td { border-bottom: none; }
+
+.ps-rownum { color: var(--color-ink-muted); width: 1%; white-space: nowrap; }
+
+/* Code shown to the student. Wraps long lines rather than overflowing. */
+.ps-code {
+  display: inline-block;
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 0.25rem 0.5rem;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* The character shown for a caesar row. */
+.ps-char {
+  font-family: "JetBrains Mono", var(--font-mono);
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+/* ---- Inputs + verdict cell --------------------------------------------- */
+/* A cell holds the control(s) plus a verdict marker. The marker shows an
+   icon and color once the server has checked the answer. */
+.ps-cell { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+
+.ps-input,
+.ps-select {
+  font-size: 0.95rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  min-width: 7rem;
+}
+.ps-input:focus-visible,
+.ps-select:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+.ps-input--block { width: 100%; min-width: 0; }
+textarea.ps-input { resize: vertical; min-height: 2.4rem; line-height: 1.4; }
+
+/* Valid / Invalid toggle (two buttons) */
+.ps-toggle { display: inline-flex; gap: 0.3rem; }
+.ps-toggle__btn {
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg);
+  color: var(--color-ink);
+  cursor: pointer;
+}
+.ps-toggle__btn[aria-pressed="true"] {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: #fff;
+}
+[data-theme="dark"] .ps-toggle__btn[aria-pressed="true"] { color: #08243a; }
+
+/* The verdict marker: hidden until checked, then icon + color. */
+.ps-verdict {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  min-width: 1.25rem;
+}
+.ps-verdict__icon { font-size: 1rem; line-height: 1; }
+
+.ps-cell.is-correct .ps-input,
+.ps-cell.is-correct .ps-select { border-color: var(--color-pass); }
+.ps-cell.is-correct .ps-verdict { color: var(--color-pass); }
+
+.ps-cell.is-incorrect .ps-input,
+.ps-cell.is-incorrect .ps-select { border-color: var(--color-fail); }
+.ps-cell.is-incorrect .ps-verdict { color: var(--color-fail); }
+
+.ps-cell.is-checking .ps-verdict { color: var(--color-ink-muted); }
+
+/* Per-row feedback (hint shown only when wrong). */
+.ps-feedback {
+  margin: 0.35rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-fail);
+}
+.ps-feedback:empty { display: none; }
+
+/* A small banner for load or network problems. */
+.ps-banner {
+  background: var(--color-fail-soft);
+  border: 1px solid var(--color-fail);
+  color: var(--color-ink);
+  border-radius: var(--radius-md);
+  padding: 0.6rem 0.85rem;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}

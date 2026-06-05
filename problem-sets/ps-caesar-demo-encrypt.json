@@ -1,0 +1,22 @@
+{
+  "setId": "caesar-demo",
+  "setTitle": "Caesar Cipher Demo",
+  "demo": true,
+  "id": "caesar-demo-encrypt",
+  "part": "Encrypt HELLO (shift 3)",
+  "partOrder": 1,
+  "type": "caesar-cipher",
+  "shift": 3,
+  "direction": "encrypt",
+  "instructions": [
+    "Encrypt each letter by shifting it forward 3 places in the alphabet.",
+    "Letters wrap around, so X becomes A. Type the encrypted letter for each position."
+  ],
+  "rows": [
+    { "id": "1", "char": "H", "answer": "K" },
+    { "id": "2", "char": "E", "answer": "H" },
+    { "id": "3", "char": "L", "answer": "O" },
+    { "id": "4", "char": "L", "answer": "O" },
+    { "id": "5", "char": "O", "answer": "R" }
+  ]
+}

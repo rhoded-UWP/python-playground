@@ -1,0 +1,93 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://python-playground/problem-set-part.schema.json",
+  "title": "Problem Set Part",
+  "description": "One JSON file describes ONE part of a problem set. Files that share the same setId are grouped into a single problem set (one rail slot, one Submit button). See README.md for the full authoring recipe and a worked example of every type. Answer fields (answer, answers) live here on the server and are stripped out before anything is sent to the browser.",
+  "type": "object",
+  "required": ["setId", "id", "type", "rows"],
+  "additionalProperties": true,
+  "properties": {
+    "setId": {
+      "type": "string",
+      "description": "Groups parts into one set. All five PS2 sheets use \"ps2\". Used in the page URL (?set=ps2) and in the API path."
+    },
+    "setTitle": {
+      "type": "string",
+      "description": "Human title for the whole set, shown in the rail and at the top of the activity. Put it on at least one part file in the set; the loader reads it from the first part that has it."
+    },
+    "order": {
+      "type": "integer",
+      "description": "Which numbered rail slot this set fills (1..20). Put it on at least one part file. Omit it and set \"demo\": true for demo sets."
+    },
+    "demo": {
+      "type": "boolean",
+      "description": "true marks the set as a demo. Demo sets appear in a separate group below the numbered slots."
+    },
+    "id": {
+      "type": "string",
+      "description": "Unique id for THIS part, across the whole project. Used as the partId when checking answers."
+    },
+    "part": {
+      "type": "string",
+      "description": "Title of this part, shown as a section heading in the activity (for example \"Concatenators\")."
+    },
+    "partOrder": {
+      "type": "integer",
+      "description": "Order of this part within its set (1, 2, 3, ...)."
+    },
+    "type": {
+      "type": "string",
+      "enum": ["predict-output", "valid-invalid-type", "variable-trace", "free-form", "caesar-cipher"],
+      "description": "Which renderer and which check rule to use for this part."
+    },
+    "instructions": {
+      "description": "A string or an array of strings (one per line) shown above the rows.",
+      "oneOf": [
+        { "type": "string" },
+        { "type": "array", "items": { "type": "string" } }
+      ]
+    },
+    "columns": {
+      "type": "array",
+      "items": { "type": "string" },
+      "description": "variable-trace ONLY. The tracked variable names, in column order (for example [\"foo\", \"bar\"]). The student fills one input per column per row."
+    },
+    "shift": {
+      "type": "integer",
+      "description": "caesar-cipher ONLY. How many places each letter moves."
+    },
+    "direction": {
+      "type": "string",
+      "enum": ["encrypt", "decrypt"],
+      "description": "caesar-cipher ONLY. Shown to the student and reminds them which way to shift."
+    },
+    "rows": {
+      "type": "array",
+      "description": "The graded rows. The exact shape depends on type. See README.md.",
+      "items": {
+        "type": "object",
+        "required": ["id"],
+        "properties": {
+          "id": { "type": "string", "description": "Unique row id within this part (\"1\", \"2\", ...)." },
+          "code": { "type": "string", "description": "predict-output, valid-invalid-type, variable-trace: the line of Python shown to the student." },
+          "prompt": { "type": "string", "description": "free-form: what to write." },
+          "char": { "type": "string", "description": "caesar-cipher: the source character for this position." },
+          "starter": { "type": "string", "description": "free-form (optional): text to prefill the input with." },
+          "answer": {
+            "type": ["string", "number"],
+            "description": "predict-output, free-form, caesar-cipher: the single correct answer. STRIPPED before sending to the client."
+          },
+          "answers": {
+            "type": "object",
+            "description": "valid-invalid-type and variable-trace: the correct value per field. For valid-invalid-type the keys are \"validity\" (\"Valid\" or \"Invalid\") and \"dataType\". For variable-trace the keys are the column names. STRIPPED before sending to the client.",
+            "additionalProperties": { "type": ["string", "number"] }
+          },
+          "hint": {
+            "type": "string",
+            "description": "Optional. Encouraging nudge shown ONLY when the student gets the row wrong. Never sent until then."
+          }
+        }
+      }
+    }
+  }
+}
