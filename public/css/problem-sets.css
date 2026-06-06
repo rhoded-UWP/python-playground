@@ -26,10 +26,6 @@
   align-items: start;
 }
 
-@media (max-width: 760px) {
-  .ps-app { grid-template-columns: 1fr; }
-}
-
 .ps-app code,
 .ps-app kbd,
 .ps-app input,
@@ -340,4 +336,59 @@ textarea.ps-input { resize: vertical; min-height: 2.4rem; line-height: 1.4; }
   padding: 0.6rem 0.85rem;
   margin-bottom: 1rem;
   font-size: 0.9rem;
+}
+
+/* =========================================================
+   Small-screen overrides
+
+   These live at the END of the file on purpose: media queries do NOT add
+   specificity, so an override only wins if it comes AFTER the base rule it
+   overrides in source order. The base .ps-rail (sticky), .ps-rail__list,
+   .ps-table, and .ps-input rules are all defined above, so these must follow
+   them — otherwise the rail stays sticky and pins over the activity.
+   ========================================================= */
+
+@media (max-width: 760px) {
+  /* One column: the set picker sits on top and the activity below it, so a
+     student picks a set and then scrolls down to the problems. (The picker is
+     first in source order, so stacking already puts it on top.) */
+  .ps-app { grid-template-columns: 1fr; }
+
+  /* On a phone the rail must scroll away with the page instead of pinning,
+     so it never covers the activity as the student scrolls down to it. */
+  .ps-rail {
+    position: static;
+    top: auto;
+  }
+
+  /* Compact the numbered slots into a wrapping grid so the picker stays a
+     short block at the top instead of a tall list to scroll past. */
+  .ps-rail__list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.4rem;
+  }
+
+  /* Let wide tables fit a narrow screen: tighten the cell padding and lower
+     the input floor so columns shrink rather than pushing the page sideways. */
+  .ps-table th,
+  .ps-table td { padding: 0.4rem 0.4rem; }
+  .ps-input,
+  .ps-select { min-width: 4.5rem; }
+}
+
+@media (max-width: 480px) {
+  /* Reclaim edge space and shrink the controls another step for the smallest
+     phones, keeping multi-column tables on-screen. */
+  .ps-page { padding-inline: 0.75rem; }
+  .ps-rail__list { grid-template-columns: 1fr 1fr; }
+  .ps-table { font-size: 0.9rem; }
+  .ps-input,
+  .ps-select { min-width: 3.5rem; }
+
+  /* Stack the toolbar so the title, score, and buttons each get their own
+     row instead of crowding. */
+  .ps-toolbar { flex-direction: column; align-items: flex-start; }
+  .ps-toolbar__actions { width: 100%; }
+  .ps-toolbar__actions .ps-btn { flex: 1; }
 }
