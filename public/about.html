@@ -15,6 +15,41 @@
     })();
   </script>
   <link rel="stylesheet" href="/css/styles.css" />
+  <style>
+    /* Compact link cards for the Workshop section. Small, auto-wrapping tiles
+       so multiple links sit side by side without filling the page. */
+    .link-cards {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+    }
+    .link-card {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55rem;
+      padding: 0.6rem 0.9rem;
+      background: var(--color-surface);
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-md);
+      color: var(--color-ink);
+      text-decoration: none;
+      font-weight: 600;
+      line-height: 1.2;
+      transition: border-color 160ms ease, transform 160ms ease;
+    }
+    .link-card:hover {
+      border-color: var(--color-accent);
+      transform: translateY(-1px);
+    }
+    .link-card__icon {
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+    .link-card__label { font-size: 0.95rem; }
+  </style>
 </head>
 <body data-page="about">
   <header class="site-header">
@@ -53,6 +88,20 @@
       <article class="content-block">
         <!-- Page content goes here -->
       </article>
+    </section>
+
+    <section class="page__body" aria-labelledby="workshop-heading">
+      <h2 id="workshop-heading">Workshop</h2>
+      <!-- Add more links by copying a <li> block: set the href, icon, and label. -->
+      <ul class="link-cards">
+        <li>
+          <a class="link-card" href="https://rhoded-uwp.github.io/CtF_v1/" target="_blank" rel="noopener noreferrer">
+            <span class="link-card__icon" aria-hidden="true">🚩</span>
+            <span class="link-card__label">CtF</span>
+            <span class="visually-hidden">Capture the Flag (opens in a new tab)</span>
+          </a>
+        </li>
+      </ul>
     </section>
   </main>
 
