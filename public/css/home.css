@@ -83,6 +83,9 @@
 
 .home-hero__logo,
 .home-hero__text { position: relative; z-index: 1; }
+/* Let the text column shrink/wrap rather than overflow in the narrow
+   two-column hero zone just above the 720px stack breakpoint. */
+.home-hero__text { min-width: 0; }
 
 .home-hero__logo-svg {
   width: clamp(96px, 12vw, 168px);

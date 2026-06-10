@@ -76,7 +76,6 @@
     var STORAGE_KEY = 'pp-theme';
     var toggle = document.querySelector('.theme-toggle');
     if (!toggle) return;
-    var icon = toggle.querySelector('.theme-toggle__icon');
 
     syncToggleUI(document.documentElement.getAttribute('data-theme') || 'light');
 
@@ -88,16 +87,12 @@
       syncToggleUI(next);
     });
 
+    // The sun/moon glyphs are swapped purely by CSS off [data-theme];
+    // here we only keep the button's accessible state in sync.
     function syncToggleUI(theme) {
-      if (theme === 'dark') {
-        if (icon) icon.textContent = '🌛';
-        toggle.setAttribute('aria-label', 'Switch to light mode');
-        toggle.setAttribute('aria-pressed', 'true');
-      } else {
-        if (icon) icon.textContent = '☀️';
-        toggle.setAttribute('aria-label', 'Switch to dark mode');
-        toggle.setAttribute('aria-pressed', 'false');
-      }
+      var isDark = theme === 'dark';
+      toggle.setAttribute('aria-label', isDark ? 'Switch to light mode' : 'Switch to dark mode');
+      toggle.setAttribute('aria-pressed', String(isDark));
     }
   }
 })();
