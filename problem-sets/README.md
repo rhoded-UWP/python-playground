@@ -18,6 +18,86 @@ public shape, so anything you add to a row that is not a known display field
 never reaches the browser. You do not have to do anything special to hide an
 answer. Just keep the data in this folder.
 
+## Copy deterrence (students cannot paste problems into AI)
+
+The page is built so a student cannot select-and-copy the problem content
+(the Python snippets, free-form prompts, and cipher characters) to paste
+into an AI chatbot. **This happens automatically in the renderer. Authors
+do nothing** — write plain readable strings in the JSON exactly as the
+examples below show. Never scramble, encode, or obfuscate text inside a
+JSON file; the file must stay human-readable for the next teacher.
+
+How it works, so you do not accidentally undo it:
+
+- `shieldedText()` in `public/js/problem-set.js` renders graded display
+  text with its characters in **shuffled DOM order**; per-span CSS `order`
+  (the `.ps-shield` rules in `public/css/problem-sets.css`) restores the
+  visual order. Clipboard, Reader Mode, Save Page, and Print-to-PDF walk
+  DOM order, so all of them get garbage. `user-select: none` stops
+  highlight-copy on top of that.
+- **Screen readers still work** because the real string is placed in
+  `aria-label` with `role="img"` on the wrapper. This pair is the
+  accessibility contract: the `aria-label` must always be the exact,
+  unmodified text.
+
+Rules when changing the renderer or adding a new problem type:
+
+1. Render every graded display field (anything an AI could be asked to
+   solve: code, prompts, characters) with `shieldedText()`, **never** as a
+   plain text node.
+2. Leave instructions and part titles as plain text on purpose — students
+   may need to search or quote them, and they do not contain the problems.
+3. Do not remove the `.ps-shield` CSS rules or replace `shieldedText()`
+   with `textContent` — either change silently puts clean, copyable text
+   back into the page.
+4. After a renderer change, verify both halves: (a) selecting the activity
+   and copying yields no usable problem text, and (b) a screen reader (or
+   the browser's accessibility tree in DevTools) announces each snippet
+   correctly.
+
+Known limit, accepted on purpose: the answer-free JSON that the page
+renders from is fetchable at `/api/sets/<setId>` by a student who opens
+the browser's developer tools. That is beyond casual copy-paste and is
+deliberately out of scope — do not add client-side encoding to "fix" it.
+
+## Submission watermark (the score is burned into the PNG)
+
+When a student clicks Submit, the PNG they download carries a large red
+diagonal stamp across the center of the activity — like a CONFIDENTIAL
+stamp on a document — with two lines:
+
+1. the student's name (exactly as typed into the Submit prompt), and
+2. their percentage score, **rounded UP to a whole percent** (a 33.3
+   becomes 34%, via `Math.ceil`).
+
+The percentage is (fields currently correct) / (total points possible)
+at the moment of Submit. Lines the student never answered count as 0.
+The stamp is translucent (about 38% opacity) so the answers underneath
+stay readable for grading, and it exists only inside the image: it is
+added just before the PNG renders and removed right after, so students
+never see it hanging over the live page.
+
+**This is automatic and renderer-level. Authors do nothing.** Every set,
+current and future, gets the watermark because the score comes from the
+same machinery that powers the live `earned / total` readout:
+
+- Total points come from each type's `fields()` entry in the `TYPES` map
+  in `lib/loader.js` (one point per gradable field per row).
+- Earned points come from the per-line server checks the student has
+  already made.
+
+Rules when changing the renderer or adding a new problem type:
+
+1. A new type must declare all of its gradable fields in its `TYPES.fields()`
+   entry (this was already required for checking); the watermark percentage
+   is then correct for free. Do not compute a separate score for the stamp.
+2. The watermark must be appended to the capture element (`.ps-capture`)
+   **before** `toPng` runs and removed afterward — see `buildWatermark()`
+   and the `submit()` function in `public/js/problem-set.js`, and the
+   `.ps-watermark` rules in `public/css/problem-sets.css`.
+3. Keep the stamp translucent and keep the ceiling rounding. If you change
+   the look, change the CSS, not the scoring.
+
 ## Sets and parts
 
 - A **set** is what shows up as one slot in the left rail (for example
@@ -182,7 +262,9 @@ Character-by-character encrypt or decrypt. Set the `shift` and `direction`
 
 - `lib/loader.js` reads and groups these files and builds the public shape.
   Add a new `type` here (one entry in the `TYPES` map) plus a renderer in
-  `public/js/problem-set.js` to support a new kind of problem.
+  `public/js/problem-set.js` to support a new kind of problem. In that
+  renderer, display the graded content with `shieldedText()` (see "Copy
+  deterrence" above), never as a plain text node.
 - `lib/validator.js` is the single place the answer-matching rule lives.
   Loosen matching there (and only there) if you ever want to.
 - `server.js` exposes `/api/sets`, `/api/sets/:setId`, and

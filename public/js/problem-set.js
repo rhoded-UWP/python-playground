@@ -10,13 +10,22 @@
      3. When a student commits one answer (blur, Enter, change, or click),
         it POSTs just that one value to POST /api/sets/:setId/check and shows
         the server's correct / incorrect verdict on that row.
-     4. Submit asks for a name, stamps it on the activity, saves the activity
-        as a PNG (the interim "submission"), then resets to empty.
+     4. Submit asks for a name, stamps it on the activity, overlays a red
+        diagonal watermark (name + ceiling-rounded percent score) so the
+        score is burned into the image, saves the activity as a PNG (the
+        interim "submission"), then resets to empty.
 
    IMPORTANT: this file never receives or stores correct answers. It only
    ever sees a per-line verdict from the server. All correct answers live in
    /problem-sets on the server. Code and prompts are placed with textContent
    only, never innerHTML, so there is no injection surface.
+
+   COPY DETERRENCE: graded display text (code snippets, free-form prompts,
+   cipher characters) is rendered with shieldedText(), which keeps no clean
+   copy of the text in the DOM: characters sit in shuffled DOM order and CSS
+   restores the visual order, while the real string lives only in aria-label
+   so screen readers still announce it. See "Copy-deterrent text rendering"
+   below and problem-sets/README.md ("Copy deterrence") for the rules.
 
    Loaded as an ES module (so it defers and can use import), matching the
    programming playground.
@@ -331,7 +340,7 @@ function cellsFor(setId, part, row) {
     case "free-form":
       return [
         num,
-        el("td", {}, el("span", { text: row.prompt })),
+        el("td", {}, shieldedText("span", "ps-prompt", row.prompt)),
         // multiline allows a small block; checked on blur so Enter can add
         // newlines. FUTURE: an execution-based checker could replace the
         // exact match here (see lib/loader.js, free-form type).
@@ -347,7 +356,7 @@ function cellsFor(setId, part, row) {
     case "caesar-cipher":
       return [
         num,
-        el("td", {}, el("span", { class: "ps-char", text: row.char })),
+        el("td", {}, shieldedText("span", "ps-char", row.char)),
         answerTd(textCell(setId, part.id, row.id, "answer", { label: "Row " + row.id + " shifted character", short: true })),
       ];
 
@@ -376,8 +385,66 @@ function buildTable(setId, part) {
   return table;
 }
 
+/* ---- Copy-deterrent text rendering -------------------------------------- */
+
+// Render author text so it reads normally on screen and in a screen reader,
+// but copies as garbage. How it works:
+//   - The text is split into chunks (words and runs of whitespace), and each
+//     chunk into characters. Both levels are inserted in SHUFFLED DOM order.
+//   - Each span gets an inline CSS `order` that puts it back in the right
+//     VISUAL order (the .ps-shield classes are flex containers).
+//   - The clipboard, Reader Mode, Save Page, Print-to-PDF, and Ctrl+F all
+//     walk DOM order, so every text-extraction path gets the shuffle.
+//     user-select: none (in problem-sets.css) stops highlight-copy as well.
+//   - The REAL string lives only in aria-label with role="img", the standard
+//     pattern for "announce this as one string": screen readers read it
+//     exactly, and text extractors ignore attributes.
+//
+// RULE for future problem types: any graded display text an AI could be
+// asked to solve (code, prompts, cipher characters) MUST be rendered with
+// this function, never as a plain text node. Instructions and part titles
+// stay plain on purpose so they remain searchable and quotable.
+function shieldedText(tag, className, text) {
+  const value = String(text);
+  // Nothing to protect; avoid an unnamed role="img" node.
+  if (!value) return el(tag, { class: className });
+
+  const node = el(tag, {
+    class: className + " ps-shield",
+    role: "img",
+    "aria-label": value,
+  });
+
+  // Split into word / whitespace chunks so line wrapping (which flex does in
+  // visual order) can only happen between chunks, never mid-word.
+  const chunks = value.split(/(\s+)/).filter((c) => c.length);
+  const chunkSpans = chunks.map((chunk, chunkIndex) => {
+    const chunkSpan = el("span", { class: "ps-shield__chunk", "aria-hidden": "true" });
+    chunkSpan.style.order = String(chunkIndex);
+    const charSpans = [...chunk].map((ch, charIndex) => {
+      const charSpan = el("span", { text: ch });
+      charSpan.style.order = String(charIndex);
+      return charSpan;
+    });
+    shuffle(charSpans).forEach((s) => chunkSpan.append(s));
+    return chunkSpan;
+  });
+  shuffle(chunkSpans).forEach((s) => node.append(s));
+  return node;
+}
+
+// In-place Fisher-Yates shuffle. Randomness only affects DOM order (never
+// what is displayed), so Math.random is fine.
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
 function codeEl(text) {
-  return el("code", { class: "ps-code", text: String(text) });
+  return shieldedText("code", "ps-code", text);
 }
 
 // Wrap an answer control (.ps-answer) in a <td>.
@@ -539,7 +606,52 @@ function setIcon(cell, icon, text) {
   v.querySelector(".ps-verdict__text").textContent = text;
 }
 
-/* ---- Submit: name -> PNG -> reset -------------------------------------- */
+/* ---- Submit: name -> watermark -> PNG -> reset -------------------------- */
+
+// The red diagonal stamp burned into the submission PNG: the student's name
+// and their percentage score, centered over the activity like a CONFIDENTIAL
+// stamp. Font sizes start from the capture's width (the name line also
+// shrinks to fit long names); then, because the rotated stamp's bounding box
+// can poke past a short capture and get clipped, the stamp is measured in
+// place and uniformly scaled down until it fits. Appends itself to the
+// capture (it must be in the DOM to measure) and returns the overlay so
+// submit() can remove it. Only exists while the PNG renders, so it needs no
+// aria wiring beyond aria-hidden.
+function buildWatermark(captureEl, name, percent) {
+  const overlay = el("div", { class: "ps-watermark", "aria-hidden": "true" });
+  const stamp = el("div", { class: "ps-watermark__stamp" });
+  const width = captureEl.clientWidth || 800;
+
+  const nameLine = el("div", { text: name });
+  nameLine.style.fontSize =
+    Math.round(Math.min(width / 8, (width * 0.9) / Math.max(name.length, 5))) + "px";
+
+  const scoreLine = el("div", { text: percent + "%" });
+  scoreLine.style.fontSize = Math.round(width / 6) + "px";
+
+  stamp.append(nameLine, scoreLine);
+  overlay.append(stamp);
+  captureEl.append(overlay);
+
+  // Shrink-to-fit: never scale up, only down, keeping a small margin.
+  const box = stamp.getBoundingClientRect();
+  const room = overlay.getBoundingClientRect();
+  if (box.width && box.height) {
+    const fit = Math.min(room.width / box.width, room.height / box.height) * 0.92;
+    if (fit < 1) stamp.style.transform = "rotate(-45deg) scale(" + fit + ")";
+  }
+  return overlay;
+}
+
+// The score stamped on the PNG: fields correct right now out of all possible.
+// Unanswered lines have never been checked, so they simply count as 0.
+// Rounded UP to a whole percent (33.3 -> 34), so the stamp never understates.
+function submissionPercent(set) {
+  let earned = 0;
+  for (const correct of scoreState.values()) if (correct) earned += 1;
+  const total = set.pointsPossible || 0;
+  return total ? Math.ceil((earned / total) * 100) : 0;
+}
 
 async function submit(set, captureEl, submitBtn) {
   const name = (window.prompt("Enter your name for the submission image:") || "").trim();
@@ -549,6 +661,10 @@ async function submit(set, captureEl, submitBtn) {
   // who did it and when.
   const stamp = captureEl.querySelector("#ps-stamp");
   if (stamp) stamp.textContent = name + " · " + set.title + " · " + new Date().toLocaleDateString();
+
+  // Overlay the red name + score watermark so it is part of the PNG.
+  // (buildWatermark appends itself to the capture; removed in finally.)
+  const watermark = buildWatermark(captureEl, name, submissionPercent(set));
 
   submitBtn.disabled = true;
   submitBtn.textContent = "Rendering...";
@@ -567,6 +683,9 @@ async function submit(set, captureEl, submitBtn) {
     alert("Sorry, the image could not be created. Please try again.");
     console.error("PNG render failed:", err);
   } finally {
+    // The re-render below would clear the watermark too, but remove it
+    // explicitly so it can never linger on screen if that flow changes.
+    watermark.remove();
     submitBtn.disabled = false;
     submitBtn.textContent = "Submit";
     // Interim submission flow: reset to the default empty state after saving.

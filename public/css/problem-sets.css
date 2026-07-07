@@ -179,6 +179,35 @@
   border-radius: var(--radius-lg);
   padding: clamp(1rem, 2.5vw, 1.6rem);
   box-shadow: var(--shadow-sm);
+  position: relative; /* anchors the .ps-watermark overlay on Submit */
+}
+
+/* ---- Submission watermark (.ps-watermark) -------------------------------- */
+/* Injected by buildWatermark() in problem-set.js just before the Submit PNG
+   renders, and removed right after, so it only ever exists in the image:
+   a red diagonal stamp with the student's name and ceiling-rounded percent
+   score. Translucent on purpose so the work underneath stays gradable. */
+.ps-watermark {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;      /* clip the rotated text at the card edges */
+  pointer-events: none;
+}
+
+.ps-watermark__stamp {
+  transform: rotate(-45deg);
+  text-align: center;
+  color: #dc2626;
+  opacity: 0.38;
+  font-family: "Outfit", var(--font-sans, sans-serif);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 
 .ps-capture__head {
@@ -254,6 +283,27 @@
   font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: 0.05em;
+}
+
+/* ---- Copy-deterrent text (.ps-shield) ----------------------------------- */
+/* Built by shieldedText() in problem-set.js: characters sit in shuffled DOM
+   order and the inline `order` on each span restores the visual order, so
+   these flex rules are what makes the shuffle invisible. Keep this AFTER the
+   .ps-code rules so the flex display wins. Do not "simplify" these to plain
+   inline text: that would put clean, copyable text back in the DOM. */
+.ps-shield {
+  display: inline-flex;
+  flex-wrap: wrap;          /* wraps between word chunks, in visual order */
+  user-select: none;        /* no highlight-copy (screen readers unaffected) */
+  -webkit-user-select: none;
+}
+
+.ps-shield__chunk {
+  display: inline-flex;
+}
+
+.ps-shield__chunk > span {
+  white-space: pre;         /* keep spaces and runs of spaces at full width */
 }
 
 /* ---- Inputs + verdict cell --------------------------------------------- */
