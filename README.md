@@ -2,7 +2,8 @@
 
 Classroom site for Python learning — interactive playground, problem sets, attendance activities, and contest pages (APRC, AWPC).
 
-[https://python-playground-vbr2.onrender.com/index.html
+https://python-playground-1x2z.onrender.com/index.html
+
 
 
 
