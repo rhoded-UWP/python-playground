@@ -1,0 +1,56 @@
+{
+  "id": "in-four",
+  "name": "In Four",
+  "blurb": "Cast input with int()",
+  "starter": [
+    "# Assignment: In Four — ask for a name and an age,",
+    "# then print what that person's age will be in four years.",
+    "# See the instructions on the right, then click Test Code.",
+    ""
+  ],
+  "instructions": [
+    "<p>Write a program that asks for a name and an age, then predicts the future:</p>",
+    "<ol>",
+    "<li>Ask for the user's name with <code>input(\"What is your name?\")</code> and store it in a variable.</li>",
+    "<li>Ask for the user's age with <code>input(\"How old are you?\")</code> and store it in a variable.</li>",
+    "<li>Add 4 to the age, then print one line in exactly this shape, using a single <code>print(...)</code> with commas like the Welcome assignment:</li>",
+    "</ol>",
+    "<pre><code>In four years, Ada will be 16</code></pre>",
+    "<p>(That's what it should print if the user enters <code>Ada</code> and <code>12</code> — your program must use whatever name and age are actually typed in.)</p>",
+    "<p class=\"pyenv__note\">A space after the question mark in your prompts — <code>\"What is your name? \"</code> vs. <code>\"What is your name?\"</code> — is fine either way; the tester accepts both.</p>",
+    "<p><strong>Hitting a <code>TypeError</code>?</strong> Good — that's the whole point of this assignment. <code>input()</code> always gives you <em>text</em> (a string), even when the user types digits, and Python refuses to add a number to text. <code>\"12\" + 4</code> is an error.</p>",
+    "<p>You need to <strong>cast</strong> (convert) the age from a string to a whole number before you can do math with it. Python's built-in <code>int()</code> function does exactly that — it turns text like <code>\"12\"</code> into the number <code>12</code>. Think about <em>where</em> in your program the conversion needs to happen.</p>",
+    "<p class=\"pyenv__note\">The tester runs your program twice with different names and ages, so the math has to really happen — printing a hardcoded answer won't pass.</p>"
+  ],
+  "tests": [
+    {
+      "name": "Asks for both name and age with input()",
+      "type": "source",
+      "pattern": "\\binput\\s*\\([\\s\\S]*\\binput\\s*\\("
+    },
+    {
+      "name": "Casts the age using int()",
+      "type": "source",
+      "pattern": "\\bint\\s*\\("
+    },
+    {
+      "name": "Adds 4 to the age",
+      "type": "source",
+      "pattern": "\\+\\s*4\\b|\\b4\\s*\\+"
+    },
+    {
+      "name": "Works for Ada, age 12",
+      "type": "output",
+      "input": ["Ada", "12"],
+      "ignorePromptSpace": true,
+      "expected": "What is your name?How old are you?In four years, Ada will be 16\n"
+    },
+    {
+      "name": "Works for Grace, age 40",
+      "type": "output",
+      "input": ["Grace", "40"],
+      "ignorePromptSpace": true,
+      "expected": "What is your name?How old are you?In four years, Grace will be 44\n"
+    }
+  ]
+}

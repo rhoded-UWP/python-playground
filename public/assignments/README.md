@@ -103,10 +103,11 @@ Use it to check technique ("did they use a loop?"). Provide **one** matcher:
 The program runs with `input` fed to `input()` calls in order, and its printed
 output must match `expected` **exactly** (character-for-character).
 
-| Field      | Type                   | Meaning                                                       |
-| ---------- | ---------------------- | ------------------------------------------------------------- |
-| `input`    | string[]               | One string per `input()` call, in order. Omit/`[]` if none.   |
-| `expected` | string **or** string[] | The exact required output (see the two forms below).          |
+| Field               | Type                   | Meaning                                                       |
+| ------------------- | ---------------------- | ------------------------------------------------------------- |
+| `input`             | string[]               | One string per `input()` call, in order. Omit/`[]` if none.   |
+| `expected`          | string **or** string[] | The exact required output (see the two forms below).          |
+| `ignorePromptSpace` | boolean                | Optional. When `true`, a `?` followed by spaces compares equal to a bare `?` (on both sides), so `input("Name? ")` and `input("Name?")` both pass. Use it on any test whose expected output contains an `input()` prompt ending in `?`. |
 
 **Two ways to write `expected`:**
 
@@ -134,6 +135,9 @@ output must match `expected` **exactly** (character-for-character).
   So the prompt text merges onto the same line as whatever prints next. When a
   program uses `input()`, prefer the **string** form of `expected` and write
   the merged line exactly. (See `03-welcome.json` for a real example.)
+- **Students often put a space inside a `?` prompt** — `input("Name? ")` vs
+  `input("Name?")`. Add `"ignorePromptSpace": true` to the output test so both
+  spellings pass (see `04-in-four.json`).
 - **Imports are blocked** in the playground. Assignments cannot rely on
   modules. If student code contains an import, every test reports it and fails.
 - **Exact match is case- and space-sensitive.** A failing output test shows an

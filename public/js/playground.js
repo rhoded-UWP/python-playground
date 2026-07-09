@@ -101,7 +101,10 @@ const PYODIDE_INDEX_URL =
        captures stdout/stderr, and requires an EXACT match against the
        expected output (character-for-character, including the newline that
        print() adds). input() writes its prompt to stdout with no trailing
-       newline, which the expected string must reflect.
+       newline, which the expected string must reflect. Optional
+       `ignorePromptSpace: true` relaxes one thing: a question mark followed
+       by spaces compares equal to a bare question mark, so a student's
+       input("...name? ") passes a test authored as "...name?".
 
    instructions HTML comes from the JSON a teacher authored, so it is trusted
    and assigned with innerHTML. Student code is never placed into innerHTML —
@@ -145,6 +148,7 @@ function normalizeTest(t) {
     negate: !!t.negate,
     input: Array.isArray(t.input) ? t.input : [],
     expected: buildExpected(t.expected),
+    ignorePromptSpace: !!t.ignorePromptSpace,
   };
 }
 
@@ -159,6 +163,16 @@ function buildExpected(v) {
 function joinLines(v) {
   if (Array.isArray(v)) return v.join("\n");
   return typeof v === "string" ? v : "";
+}
+
+// Compare captured output to an output test's expected string. With
+// `ignorePromptSpace` set, "? " (question mark + spaces) and "?" compare
+// equal on both sides, so it doesn't matter whether the student put a space
+// inside their input() prompt after the question mark.
+function outputMatches(got, test) {
+  if (!test.ignorePromptSpace) return got === test.expected;
+  const collapse = (s) => s.replace(/\? +/g, "?");
+  return collapse(got) === collapse(test.expected);
 }
 
 // Evaluate a declarative "source" test against the code text.
@@ -221,6 +235,10 @@ let pyodideLoaded = false;
 
 // Guard against overlapping work (Run vs Test, double clicks mid-run).
 let isBusy = false;
+
+// Developer Data (easter egg) bookkeeping — see registerDevDataStats().
+let devRunCount = 0; // Run-button presses this page load
+let pythonVersionText = "loading…"; // filled in once Pyodide is up
 
 // Which assignment is selected, plus a per-assignment cache of editor
 // contents so switching back restores the student's work for the session.
@@ -286,11 +304,22 @@ function wireThemeSync(editor) {
 function preloadPyodide() {
   setStatus("Loading Python...");
   ensurePyodide()
-    .then(function () {
+    .then(function (pyodide) {
+      // Version string for the Developer Data panel, e.g. "3.12.1 · Pyodide 0.26.2".
+      try {
+        pythonVersionText =
+          pyodide.runPython('__import__("sys").version.split()[0]') +
+          " · Pyodide " + pyodide.version;
+      } catch (e) {
+        pythonVersionText = "Pyodide " + (pyodide.version || "?");
+      }
       pyodideLoaded = true;
       runButton.disabled = false;
       runButton.textContent = "Run";
-      if (testButton) testButton.disabled = false;
+      if (testButton) {
+        testButton.disabled = false;
+        setTestStatus("Click Test Code to check your work.");
+      }
       setStatus("Ready");
     })
     .catch(function (err) {
@@ -336,6 +365,7 @@ function wireRunButton(editor) {
 async function runCode(editor) {
   if (isBusy) return; // ignore clicks while a run/test is in progress
   isBusy = true;
+  devRunCount++;
 
   runButton.disabled = true;
   runButton.textContent = "Running...";
@@ -521,7 +551,7 @@ async function runTests(editor) {
           pass = false;
           detail = { text: "Your program raised an error:", got: res.output + formatError(res.error) };
         } else {
-          pass = res.output === test.expected;
+          pass = outputMatches(res.output, test);
           if (!pass) {
             detail = { text: "Output didn't match exactly.", expected: test.expected, got: res.output };
           }
@@ -617,7 +647,9 @@ function renderPanel() {
   testStatusEl.className = "pyenv__test-status";
   testStatusEl.setAttribute("role", "status");
   testStatusEl.setAttribute("aria-live", "polite");
-  testStatusEl.textContent = "Click Test Code to check your work.";
+  testStatusEl.textContent = pyodideLoaded
+    ? "Click Test Code to check your work."
+    : "Python is loading — Test Code will enable in a moment.";
   tests.appendChild(testStatusEl);
 
   testListEl = document.createElement("ul");
@@ -645,7 +677,12 @@ function renderTestRows(tests) {
 
     const name = document.createElement("span");
     name.className = "pyenv__test-name";
-    name.textContent = test.name;
+    // Screen-reader-only result prefix ("Passed:"/"Failed:") — the ✓/✗ icon
+    // is aria-hidden, so this span is what announces the state.
+    const srResult = document.createElement("span");
+    srResult.className = "visually-hidden pyenv__test-sr";
+    name.appendChild(srResult);
+    name.appendChild(document.createTextNode(test.name));
 
     li.appendChild(icon);
     li.appendChild(name);
@@ -663,10 +700,10 @@ function updateTestRow(index, pass, detail) {
   li.classList.add(pass ? "pyenv__test--pass" : "pyenv__test--fail");
 
   const icon = li.querySelector(".pyenv__test-icon");
-  if (icon) {
-    icon.textContent = pass ? "✓" : "✗";
-    icon.setAttribute("aria-label", pass ? "Passed: " : "Failed: ");
-  }
+  if (icon) icon.textContent = pass ? "✓" : "✗";
+
+  const sr = li.querySelector(".pyenv__test-sr");
+  if (sr) sr.textContent = pass ? "Passed: " : "Failed: ";
 
   // Clear any prior detail.
   const old = li.querySelector(".pyenv__test-detail");
@@ -735,8 +772,17 @@ function selectAssignment(editor, id) {
 
   clearOutput();
   setStatus("Ready");
+
+  // renderRail() rebuilds the picker, destroying the button that was just
+  // activated. If focus was inside the rail (keyboard user), move it to the
+  // freshly rendered active button so tabbing doesn't restart from <body>.
+  const hadRailFocus = railEl.contains(document.activeElement);
   renderRail();
   renderPanel();
+  if (hadRailFocus) {
+    const activeBtn = railEl.querySelector(".pyenv__pick.is-active");
+    if (activeBtn) activeBtn.focus();
+  }
 }
 
 /* ---- Output helpers ------------------------------------ */
@@ -813,6 +859,21 @@ function setTestStatus(text) {
   if (testStatusEl) testStatusEl.textContent = text;
 }
 
+/* ---- Developer Data (easter egg) ------------------------ */
+
+// The panel itself is shared site-wide (/js/devdata.js, loaded before
+// this module). Here we just prepend the playground-only stats that
+// need the editor and the Python runtime.
+function registerDevDataStats(editor) {
+  if (!window.devdata) return;
+  window.devdata.addStats([
+    { label: "Lines of code", value: function () { return getCode(editor).split("\n").length.toLocaleString(); } },
+    { label: "Characters of code", value: function () { return getCode(editor).length.toLocaleString(); } },
+    { label: "Runs this session", value: function () { return devRunCount.toLocaleString(); } },
+    { label: "Python", value: function () { return pythonVersionText; } },
+  ]);
+}
+
 /* ---- Boot ---------------------------------------------- */
 
 // Show a brief placeholder in the rail while the assignment files load.
@@ -870,6 +931,7 @@ async function initPlayground() {
   wireRunButton(editor);
   wireRailSelection(editor);
   wireTestButton(editor);
+  registerDevDataStats(editor);
 }
 
 if (editorMount && outputEl && runButton && railEl && panelEl) {

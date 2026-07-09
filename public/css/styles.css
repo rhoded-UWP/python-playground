@@ -15,8 +15,10 @@
      base.css     reset, base elements, layout primitives, utilities
      chrome.css   header, brand, tabs, toggles, footer, nav responsive
      page.css     generic page scaffolding (hero, body grid, content cards)
+     devdata.css  "Developer Data" easter-egg panel + footer switch
    ========================================================= */
 @import url("tokens.css");
 @import url("base.css");
 @import url("chrome.css");
 @import url("page.css");
+@import url("devdata.css");

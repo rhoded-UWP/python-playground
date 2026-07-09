@@ -147,14 +147,29 @@
         </li>
       </ul>
     </section>
+
+    <!--
+      "Developer Data" easter egg. Hidden by default; revealed by the
+      { dev } button in the footer. Rendered and refreshed by the shared
+      /js/devdata.js. Starts closed on every page load, on purpose.
+    -->
+    <section class="devdata" id="devdata" hidden aria-label="Developer data">
+      <div class="devdata__bar">Developer Data</div>
+      <dl class="devdata__grid" id="devdata-grid"></dl>
+      <p class="devdata__note">A "—" means your browser doesn't share that value. Numbers refresh every second while this panel is open.</p>
+    </section>
   </main>
 
   <footer class="site-footer">
     <div class="site-footer__inner">
       <p>&copy; <span id="footer-year">2026</span> Python Playground</p>
+      <!-- Easter-egg switch for the Developer Data panel above. -->
+      <button type="button" class="devdata-toggle" id="devdata-toggle"
+              aria-expanded="false" aria-controls="devdata">{ dev }</button>
     </div>
   </footer>
 
   <script src="/js/main.js" defer></script>
+  <script src="/js/devdata.js" defer></script>
 </body>
 </html>
