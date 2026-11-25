@@ -5,7 +5,22 @@
    - Theme toggle with localStorage persistence
    - Stamps the current year into the footer
    - Types out the home-page hero title (home page only)
+   - window.ppTrack(): anonymous usage beacon for the /dashboard page
    ========================================================= */
+
+/* Send one anonymous usage event to POST /api/events. Pages call
+   window.ppTrack('code_run', { ... }). Nothing identifying is sent: no ID,
+   no cookie. sendBeacon survives page navigation and never blocks the UI;
+   any failure is ignored because analytics must never break the site. */
+window.ppTrack = function (type, data) {
+  try {
+    var body = JSON.stringify({ type: type, page: location.pathname, data: data || {} });
+    var blob = new Blob([body], { type: 'application/json' });
+    if (navigator.sendBeacon && navigator.sendBeacon('/api/events', blob)) return;
+    fetch('/api/events', { method: 'POST', body: body, keepalive: true,
+      headers: { 'Content-Type': 'application/json' } }).catch(function () {});
+  } catch (e) {}
+};
 
 (function () {
   'use strict';

@@ -374,10 +374,10 @@ async function runCode(editor) {
 
   // Result shape kept stable for callers/future hooks to consume.
   const result = { ok: true, error: null };
+  const source = getCode(editor);
 
   try {
     const pyodide = await ensurePyodide();
-    const source = getCode(editor);
 
     // Guardrail: activities never need imports, so reject any import
     // statement before running. The check parses with Python's ast, so the
@@ -416,6 +416,10 @@ async function runCode(editor) {
     runButton.textContent = "Run";
     if (testButton) testButton.disabled = false;
     setStatus(result.ok ? "Finished" : "Finished with an error");
+    trackCode("code_run", source, {
+      ok: result.ok,
+      error_type: result.error ? pythonErrorType(result.error) : null,
+    });
   }
 
   return result;
@@ -569,12 +573,70 @@ async function runTests(editor) {
       testButton.textContent = "Test Code";
     }
     const total = assignment.tests.length;
+    trackCode("code_test", source, {
+      passed,
+      total,
+      first_pass: passed === total && markFirstPass(assignment.id),
+    });
     setTestStatus(
       passed === total
         ? "All " + total + " tests passed. 🎉"
         : passed + " of " + total + " tests passed."
     );
   }
+}
+
+/* ---- Usage tracking (feeds /dashboard) ----------------- */
+// Anonymous: no student ID is sent. See window.ppTrack in /js/main.js and
+// lib/analytics.js on the server.
+//
+// "Lines of code written" = growth in meaningful lines (non-blank, not a
+// comment) beyond the most this assignment has had during this page visit.
+// The starter code is the baseline, so starter lines never count, and
+// pressing Run ten times on the same code counts once.
+const lineHighWater = {};
+
+function meaningfulLines(text) {
+  return String(text || "")
+    .split("\n")
+    .filter((line) => {
+      const t = line.trim();
+      return t !== "" && !t.startsWith("#");
+    }).length;
+}
+
+function trackCode(type, source, data) {
+  if (typeof window.ppTrack !== "function") return;
+  const id = activeId;
+  const lines = meaningfulLines(source);
+  if (!(id in lineHighWater)) lineHighWater[id] = meaningfulLines(assignmentById(id).starter);
+  const newLines = Math.max(0, lines - lineHighWater[id]);
+  lineHighWater[id] = Math.max(lineHighWater[id], lines);
+  window.ppTrack(type, Object.assign({ assignment: id, lines, new_lines: newLines }, data));
+}
+
+// True only the first time this browser passes every test for an
+// assignment, so "assignments completed" isn't inflated by re-testing.
+// It's a local flag in this browser, not an identity sent to the server.
+function markFirstPass(id) {
+  const KEY = "pp-completed";
+  try {
+    const done = JSON.parse(localStorage.getItem(KEY) || "[]");
+    if (done.includes(id)) return false;
+    done.push(id);
+    localStorage.setItem(KEY, JSON.stringify(done));
+    return true;
+  } catch (e) {
+    return false; // storage blocked: don't count, rather than over-count
+  }
+}
+
+// "NameError: name 'x' is not defined" -> "NameError". Pyodide's message is
+// a full traceback; the error class is on the last matching line.
+function pythonErrorType(err) {
+  const text = err && err.message ? err.message : String(err);
+  const matches = text.match(/^(\w*(?:Error|Exception|Interrupt|Exit))\b/gm);
+  return matches ? matches[matches.length - 1] : null;
 }
 
 /* ---- 5. Rail + panel rendering ------------------------- */

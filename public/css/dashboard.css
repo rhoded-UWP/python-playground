@@ -1,0 +1,262 @@
+/* =========================================================
+   Python Playground — Usage dashboard (dashboard.html only)
+
+   Uses the shared tokens only. Data marks use --color-accent (one hue,
+   because every chart here is a single series); the heatmap steps that
+   same hue from light to dark. Correct / wrong reuse --color-pass and
+   --color-fail, always next to a text label.
+   ========================================================= */
+
+.dash {
+  --dash-mark: var(--color-accent);
+  --dash-grid: var(--color-border);
+  --dash-empty: var(--color-tab-bg);
+}
+
+/* ---- Hero + range control -------------------------------- */
+.dash-hero {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem 2rem;
+  align-items: flex-end;
+  justify-content: space-between;
+}
+.dash-hero__text { min-width: 0; flex: 1 1 28rem; }
+.dash-hero__controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.dash-range,
+.dash-metric {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 3px;
+  background: var(--color-tab-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.dash-range button,
+.dash-metric button {
+  border: 0;
+  background: transparent;
+  color: var(--color-ink-muted);
+  padding: 0.35rem 0.75rem;
+  border-radius: 4px;
+  font-size: 0.875rem;
+  line-height: 1.3;
+}
+.dash-range button:hover,
+.dash-metric button:hover { color: var(--color-ink); background: var(--color-tab-bg-hover); }
+.dash-range button[aria-pressed="true"],
+.dash-metric button[aria-pressed="true"] {
+  background: var(--color-surface);
+  color: var(--color-accent);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+.dash-range button:focus-visible,
+.dash-metric button:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
+}
+
+.dash-updated { margin: 0; font-size: 0.8125rem; color: var(--color-ink-muted); }
+
+.dash-notice {
+  margin: 0;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--color-accent);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+/* ---- Grid ------------------------------------------------ */
+.dash-body {
+  display: grid;
+  gap: 1.25rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  align-items: start;
+}
+.dash-body[aria-busy="true"] { opacity: 0.55; transition: opacity 0.2s var(--ease); }
+
+.dash-kpis,
+.dash-card--wide { grid-column: 1 / -1; }
+
+.dash-card {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: clamp(1rem, 2.5vw, 1.5rem);
+  box-shadow: var(--shadow-sm);
+  min-width: 0;
+}
+.dash-card h2 { margin: 0; font-size: 1.125rem; }
+.dash-card__sub { margin: 0.35rem 0 1rem; color: var(--color-ink-muted); font-size: 0.875rem; }
+.dash-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+/* ---- KPI tiles ------------------------------------------- */
+.dash-kpis {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr));
+}
+.dash-kpi {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 1rem 1.25rem;
+  box-shadow: var(--shadow-sm);
+}
+.dash-kpi__label { margin: 0; font-size: 0.8125rem; color: var(--color-ink-muted); }
+.dash-kpi__value {
+  margin: 0.25rem 0 0;
+  font-size: clamp(1.75rem, 3vw, 2.25rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--color-ink);
+  font-variant-numeric: tabular-nums;
+}
+.dash-kpi__delta { margin: 0.35rem 0 0; font-size: 0.8125rem; color: var(--color-ink-muted); }
+
+/* ---- Lines of code strip --------------------------------- */
+.dash-loc {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 140px), 1fr));
+  gap: 1px;
+  background: var(--color-border);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+.dash-loc > div { background: var(--color-surface); padding: 0.9rem 1rem; }
+.dash-loc dt { font-size: 0.8125rem; color: var(--color-ink-muted); }
+.dash-loc dd {
+  margin: 0.2rem 0 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- SVG column chart ------------------------------------ */
+.dash-chart { position: relative; min-height: 240px; }
+.dash-chart svg { display: block; width: 100%; height: 240px; overflow: visible; }
+.dash-chart .grid { stroke: var(--dash-grid); stroke-width: 1; }
+.dash-chart .axis-text { fill: var(--color-ink-muted); font-size: 11px; font-family: var(--font-sans); }
+.dash-chart .bar { fill: var(--dash-mark); }
+.dash-chart .hit { fill: transparent; cursor: default; }
+.dash-chart .hit:hover + .bar,
+.dash-chart .bar.is-hot { opacity: 0.75; }
+.dash-chart .baseline { stroke: var(--color-ink-muted); stroke-width: 1; }
+
+/* ---- Horizontal bar lists -------------------------------- */
+.dash-bars { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.7rem; }
+.dash-bars li { display: grid; gap: 0.3rem; }
+.dash-bars__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.875rem;
+}
+.dash-bars__label { min-width: 0; overflow-wrap: anywhere; }
+.dash-bars__label code {
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  background: var(--color-tab-bg);
+  padding: 0.05rem 0.3rem;
+  border-radius: 4px;
+}
+.dash-bars__meta { display: block; color: var(--color-ink-muted); font-size: 0.75rem; }
+.dash-bars__value { flex: none; font-variant-numeric: tabular-nums; font-weight: 600; }
+.dash-bars__track { height: 8px; border-radius: 4px; background: var(--dash-empty); overflow: hidden; }
+.dash-bars__fill { height: 100%; border-radius: 4px; background: var(--dash-mark); min-width: 2px; }
+.dash-bars--fail .dash-bars__fill { background: var(--color-fail); }
+
+/* ---- Heatmap --------------------------------------------- */
+.dash-heat { overflow-x: auto; }
+.dash-heat__grid {
+  display: grid;
+  grid-template-columns: 2.5rem repeat(24, minmax(10px, 1fr));
+  gap: 2px;
+  min-width: 300px;
+}
+.dash-heat__day,
+.dash-heat__hour {
+  font-size: 0.6875rem;
+  color: var(--color-ink-muted);
+  display: flex;
+  align-items: center;
+}
+.dash-heat__hour { justify-content: center; }
+.dash-heat__cell {
+  height: clamp(12px, 2.2vw, 22px);
+  border-radius: 2px;
+  background: var(--dash-empty);
+}
+.dash-heat__cell:focus-visible { outline: 2px solid var(--color-ink); outline-offset: 1px; }
+.dash-heat__legend {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: 0.75rem;
+  font-size: 0.75rem;
+  color: var(--color-ink-muted);
+}
+.dash-heat__legend span.swatch { width: 14px; height: 14px; border-radius: 2px; }
+
+/* ---- Tables ---------------------------------------------- */
+.dash-table-wrap { overflow-x: auto; }
+.dash-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+.dash-table th,
+.dash-table td {
+  padding: 0.5rem 0.75rem;
+  text-align: right;
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.dash-table th:first-child,
+.dash-table td:first-child { text-align: left; white-space: normal; }
+.dash-table th { color: var(--color-ink-muted); font-weight: 600; font-size: 0.8125rem; }
+.dash-table tbody tr:hover { background: var(--color-accent-soft); }
+
+.dash-table-toggle { margin-top: 0.75rem; font-size: 0.875rem; }
+.dash-table-toggle summary { cursor: pointer; color: var(--color-accent); }
+.dash-table-toggle .dash-table-wrap { margin-top: 0.5rem; max-height: 320px; overflow-y: auto; }
+
+.dash-empty { margin: 0; color: var(--color-ink-muted); font-size: 0.875rem; }
+
+.dash-privacy { margin: 0; color: var(--color-ink-muted); font-size: 0.8125rem; max-width: 80ch; }
+
+/* ---- Tooltip --------------------------------------------- */
+.dash-tooltip {
+  position: fixed;
+  z-index: 50;
+  pointer-events: none;
+  background: var(--color-surface);
+  color: var(--color-ink);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-md);
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8125rem;
+  line-height: 1.35;
+  max-width: 240px;
+}
+.dash-tooltip strong { display: block; font-variant-numeric: tabular-nums; }
+
+@media (max-width: 640px) {
+  .dash-hero__controls { align-items: flex-start; }
+}

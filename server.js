@@ -18,11 +18,23 @@ const express = require('express');
 const loader = require('./lib/loader');
 const validator = require('./lib/validator');
 
+// Usage analytics for /dashboard. Turned off automatically when
+// DATABASE_URL isn't set, so local development needs no database.
+const analytics = require('./lib/analytics');
+const db = require('./lib/db');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Render sits behind a proxy; trust it so req.ip is the real client
+// (used only in memory by the analytics rate limiter).
+app.set('trust proxy', 1);
+
 // Parse JSON bodies for future API endpoints.
 app.use(express.json());
+
+// Count page views (must run before express.static serves the file).
+app.use(analytics.pageViews(path.join(__dirname, 'public')));
 
 // Serve static assets (HTML, CSS, JS, images) from /public.
 app.use(express.static(path.join(__dirname, 'public')));
@@ -30,6 +42,9 @@ app.use(express.static(path.join(__dirname, 'public')));
 // --- API routes ---------------------------------------------------------
 // Future API endpoints get mounted here. Example:
 //   app.use('/api/problems', require('./routes/problems'));
+
+// Analytics: POST /api/events (browser beacons), GET /api/stats (dashboard).
+app.use(analytics.router);
 
 // Simple health check Render can ping.
 app.get('/api/health', (req, res) => {
@@ -122,6 +137,7 @@ app.post('/api/sets/:setId/check', (req, res) => {
     }
 
     const correct = validator.isCorrect(lookup.expected, value);
+    analytics.recordCheck(req.params.setId, partId, rowId, field, correct);
     const body = { correct };
     // Only ever send a hint, never the answer, and only when wrong.
     if (!correct && lookup.hint) body.feedback = lookup.hint;
@@ -143,4 +159,6 @@ app.get('*', (req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Python Playground listening on port ${PORT}`);
   loader.warmup(); // log how many problem-set files loaded (helps catch typos)
+  if (db.enabled) db.migrate();
+  else console.log('Analytics: DATABASE_URL not set, usage tracking is off.');
 });

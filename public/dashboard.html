@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Python Playground usage dashboard: visits, code runs, assignments completed, and lines of Python written." />
+  <title>Dashboard | Python Playground</title>
+  <script>
+    (function () {
+      try {
+        var stored = localStorage.getItem('pp-theme');
+        var theme = stored || 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="/css/styles.css" />
+  <link rel="stylesheet" href="/css/dashboard.css" />
+</head>
+<body data-page="dashboard">
+  <a href="#main" class="visually-hidden skip-link">Skip to main content</a>
+  <header class="site-header">
+    <div class="site-header__inner">
+      <a href="/index.html" class="site-brand">
+        <span class="site-brand__mark">[ ]</span>
+        <span class="site-brand__name">Python Playground</span>
+      </a>
+      <button class="theme-toggle" type="button" aria-pressed="true" aria-label="Switch to light mode">
+        <span class="theme-toggle__icon" aria-hidden="true">
+          <svg class="theme-toggle__sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+          <svg class="theme-toggle__moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+        </span>
+      </button>
+      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Toggle navigation">
+        <span></span><span></span><span></span>
+      </button>
+      <nav id="primary-nav" class="primary-nav" aria-label="Primary">
+        <ul class="tab-list">
+          <li><a class="tab" data-tab="home"        href="/index.html">Home</a></li>
+          <li><a class="tab" data-tab="playground"  href="/programming-playground.html">Python Programming Playground</a></li>
+          <li><a class="tab" data-tab="problems"    href="/problem-sets.html">Problem Sets</a></li>
+          <li><a class="tab" data-tab="attendance"  href="/attendance.html">Attendance Activities</a></li>
+          <li><a class="tab" data-tab="aprc"        href="/aprc.html">APRC</a></li>
+          <li><a class="tab" data-tab="awpc"        href="/awpc.html">AWPC</a></li>
+          <li><a class="tab" data-tab="arcade"      href="/python-arcade.html">Python Arcade</a></li>
+          <li><a class="tab" data-tab="about"       href="/about.html">About Us</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="page dash">
+    <section class="page__hero dash-hero">
+      <div class="dash-hero__text">
+        <h1>Playground by the Numbers</h1>
+        <p class="page__hero-lead">How students are using Python Playground: visits, code runs, finished assignments, and lines of Python written. All numbers are anonymous.</p>
+      </div>
+      <div class="dash-hero__controls">
+        <div class="dash-range" role="group" aria-label="Time range">
+          <button type="button" data-days="7">7 days</button>
+          <button type="button" data-days="30" aria-pressed="true">30 days</button>
+          <button type="button" data-days="90">90 days</button>
+        </div>
+        <p class="dash-updated" id="dash-updated" aria-live="polite">Loading...</p>
+      </div>
+    </section>
+
+    <p class="dash-notice" id="dash-notice" hidden></p>
+
+    <div class="dash-body" id="dash-body" aria-busy="true">
+      <section class="dash-kpis" aria-label="Key numbers" id="dash-kpis"></section>
+
+      <section class="dash-card dash-card--wide" aria-labelledby="loc-title">
+        <h2 id="loc-title">Lines of Python written</h2>
+        <p class="dash-card__sub">New lines of code students added, not counting blank lines, comments, or starter code.</p>
+        <dl class="dash-loc" id="dash-loc"></dl>
+      </section>
+
+      <section class="dash-card dash-card--wide" aria-labelledby="daily-title">
+        <div class="dash-card__head">
+          <h2 id="daily-title">Daily activity</h2>
+          <div class="dash-metric" role="group" aria-label="Metric" id="dash-metric"></div>
+        </div>
+        <div class="dash-chart" id="dash-daily"></div>
+        <details class="dash-table-toggle">
+          <summary>Show as table</summary>
+          <div class="dash-table-wrap" id="dash-daily-table"></div>
+        </details>
+      </section>
+
+      <section class="dash-card dash-card--wide" aria-labelledby="heat-title">
+        <h2 id="heat-title">When students code</h2>
+        <p class="dash-card__sub">Code runs, Test Code clicks, and problem-set answers by day and hour (Central time). Darker cells mean more activity.</p>
+        <div class="dash-heat" id="dash-heat"></div>
+      </section>
+
+      <section class="dash-card dash-card--wide" aria-labelledby="asg-title">
+        <h2 id="asg-title">Assignments</h2>
+        <p class="dash-card__sub">"Completed" counts the first time a browser passes every test for an assignment.</p>
+        <div class="dash-table-wrap" id="dash-assignments"></div>
+      </section>
+
+      <section class="dash-card" aria-labelledby="missed-title">
+        <h2 id="missed-title">Toughest problem-set lines</h2>
+        <p class="dash-card__sub">Share of checked answers that were wrong (lines with at least 3 answers).</p>
+        <div id="dash-missed"></div>
+      </section>
+
+      <section class="dash-card" aria-labelledby="err-title">
+        <h2 id="err-title">Most common Python errors</h2>
+        <p class="dash-card__sub">Errors raised when students clicked Run.</p>
+        <div id="dash-errors"></div>
+      </section>
+
+      <section class="dash-card" aria-labelledby="pages-title">
+        <h2 id="pages-title">Most visited pages</h2>
+        <p class="dash-card__sub">Page loads in the selected range.</p>
+        <div id="dash-pages"></div>
+      </section>
+    </div>
+
+    <p class="dash-privacy">Privacy: this dashboard stores no names, accounts, IP addresses, or browser IDs. Each record is one anonymous action, such as a page view or a code run.</p>
+
+    <!--
+      "Developer Data" easter egg. Hidden by default; revealed by the
+      { dev } button in the footer. Rendered and refreshed by the shared
+      /js/devdata.js. Starts closed on every page load, on purpose.
+    -->
+    <section class="devdata" id="devdata" hidden aria-label="Developer data">
+      <div class="devdata__bar">Developer Data</div>
+      <dl class="devdata__grid" id="devdata-grid"></dl>
+      <p class="devdata__note">A "—" means your browser doesn't share that value. Numbers refresh every second while this panel is open.</p>
+    </section>
+
+    <div class="dash-tooltip" id="dash-tooltip" role="tooltip" hidden></div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="site-footer__inner">
+      <p>&copy; <span id="footer-year"></span> Python Playground</p>
+      <!-- Easter-egg switch for the Developer Data panel above. -->
+      <button type="button" class="devdata-toggle" id="devdata-toggle"
+              aria-expanded="false" aria-controls="devdata">{ dev }</button>
+    </div>
+  </footer>
+
+  <script src="/js/main.js" defer></script>
+  <script src="/js/devdata.js" defer></script>
+  <script src="/js/dashboard.js" defer></script>
+</body>
+</html>
